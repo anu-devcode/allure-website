@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id           String       @id @default(uuid())
+  name         String
+  slug         String       @unique
+  description  String?
+  price        Float
+  category     Category     @relation(fields: [categoryId], references: [id])
+  categoryId   String
+  availability Availability @default(IN_STORE)
+  origin       String?      // e.g., Turkey, Shein
+  images       String[]     // Array of image URLs
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  OrderItems   OrderItem[]
+}
+
+enum Availability {
+  IN_STORE
+  PRE_ORDER
+  SOLD_OUT
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  orderNumber   String      @unique // e.g., ORD-1001
+  customerName  String
+  customerPhone String
+  city          String      @default("Addis Ababa")
+  total         Float
+  status        OrderStatus @default(NEW)
+  paymentStatus PaymentStatus @default(PENDING)
+  items         OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int
+  price     Float   // Price at time of purchase
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique // e.g. "hero_title", "social_telegram"
+  value String
+}
+
+model CustomRequest {
+  id            String        @id @default(uuid())
+  customerName  String
+  customerPhone String
+  itemLink      String?
+  description   String
+  imageUrls     String[]
+  status        RequestStatus @default(PENDING)
+  adminNotes    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum RequestStatus {
+  PENDING
+  QUOTED
+  CONVERTED
+  REJECTED
+}

@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #96C291;
+  --color-secondary: #DBE7C9;
+  --color-accent: #4F6F52;
+  --color-cream: #FBF9F1;
+  --color-dark: #2D302D;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-poppins), var(--font-sans);
+}
+
+:root {
+  --background: #FBF9F1;
+  --foreground: #2D302D;
+  --primary: #96C291;
+  --secondary: #DBE7C9;
+  --accent: #4F6F52;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}

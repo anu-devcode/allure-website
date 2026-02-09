@@ -1,0 +1,112 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    TrendingUp,
+    Users,
+    ShoppingBag,
+    Clock,
+    ArrowUpRight,
+    ArrowDownRight
+} from "lucide-react";
+
+const stats = [
+    {
+        title: "Total Revenue",
+        value: "154,200 ETB",
+        change: "+12.5%",
+        isPositive: true,
+        icon: TrendingUp
+    },
+    {
+        title: "Total Orders",
+        value: "42",
+        change: "+18%",
+        isPositive: true,
+        icon: ShoppingBag
+    },
+    {
+        title: "New Customers",
+        value: "12",
+        change: "-2%",
+        isPositive: false,
+        icon: Users
+    },
+    {
+        title: "Pending Orders",
+        value: "8",
+        change: "Manual confirm",
+        isPositive: true,
+        icon: Clock
+    },
+];
+
+export default function AdminDashboard() {
+    return (
+        <div className="flex flex-col gap-8">
+            <div>
+                <h1 className="font-display text-3xl font-bold text-dark">Overview</h1>
+                <p className="text-dark/60">Welcome back. Here's what's happening today.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {stats.map((stat) => (
+                    <Card key={stat.title} className="rounded-3xl border-none shadow-sm overflow-hidden group">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-xs font-bold uppercase tracking-widest text-dark/40">
+                                {stat.title}
+                            </CardTitle>
+                            <div className="h-10 w-10 rounded-2xl bg-primary/20 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-white transition-colors">
+                                <stat.icon className="h-5 w-5" />
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-dark">{stat.value}</div>
+                            <div className="mt-2 flex items-center gap-1 text-xs">
+                                {stat.isPositive ? (
+                                    <ArrowUpRight className="h-3 w-3 text-green-500" />
+                                ) : (
+                                    <ArrowDownRight className="h-3 w-3 text-red-500" />
+                                )}
+                                <span className={stat.isPositive ? "text-green-600" : "text-red-600 font-medium"}>
+                                    {stat.change}
+                                </span>
+                                <span className="text-dark/40 ml-1">vs last month</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Recent Activity Table Placeholder */}
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2 rounded-3xl bg-white p-8 shadow-sm">
+                    <h3 className="font-bold text-xl text-dark mb-6">Recent Orders</h3>
+                    <div className="flex flex-col gap-4">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center justify-between p-4 rounded-2xl hover:bg-secondary/5 border-b border-secondary/10 last:border-0 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center font-bold text-xs text-dark/40">#102{i}</div>
+                                    <div>
+                                        <p className="font-bold text-sm text-dark">Customer Name</p>
+                                        <p className="text-xs text-dark/40">2 items • 15:30 PM</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-accent">4,500 ETB</p>
+                                    <span className="text-[10px] font-bold uppercase bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Pending</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="rounded-3xl bg-white p-8 shadow-sm">
+                    <h3 className="font-bold text-xl text-dark mb-6">Quick Actions</h3>
+                    <div className="flex flex-col gap-3">
+                        <button className="w-full rounded-2xl bg-accent text-white py-3 text-sm font-bold shadow-lg shadow-accent/20 hover:scale-[1.02] transition-transform">Add New Product</button>
+                        <button className="w-full rounded-2xl bg-secondary/10 text-dark py-3 text-sm font-bold hover:bg-secondary/20 transition-colors">View All Orders</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
