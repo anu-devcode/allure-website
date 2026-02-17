@@ -1,14 +1,30 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Hero } from "@/components/features/hero";
 import { PromotionBanner } from "@/components/features/promotion-banner";
 import { ProductCard } from "@/components/features/product-card";
-import { MOCK_PRODUCTS } from "@/data/mock-products";
+import { productService } from "@/services/productService";
+import { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Testimonials } from "@/components/features/testimonials";
 
 export default function Home() {
-  const featuredProducts = MOCK_PRODUCTS.slice(0, 4);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      const p = await productService.getProducts();
+      setProducts(p);
+      setLoading(false);
+    }
+    fetchProducts();
+  }, []);
+
+  const featuredProducts = products.slice(0, 4);
 
   return (
     <div className="flex flex-col gap-0">
@@ -29,11 +45,17 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex h-64 items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-accent" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Social Proof / Call to Action */}

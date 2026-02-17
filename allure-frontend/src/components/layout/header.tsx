@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ShoppingBag, Search, Menu, X } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,10 +13,16 @@ const navLinks = [
 ];
 
 import { useCartStore } from "@/store/useCartStore";
+import { useEffect, useState } from "react";
 
 export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const itemCount = useCartStore((state) => state.getItemCount());
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-secondary/20 bg-background/80 backdrop-blur-md">
@@ -53,7 +58,7 @@ export function Header() {
                     <Link href="/cart">
                         <Button variant="ghost" size="icon" className="relative">
                             <ShoppingBag className="h-5 w-5" />
-                            {itemCount > 0 && (
+                            {mounted && itemCount > 0 && (
                                 <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-dark">
                                     {itemCount}
                                 </span>

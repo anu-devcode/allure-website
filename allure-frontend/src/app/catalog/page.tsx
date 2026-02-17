@@ -1,28 +1,50 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MOCK_PRODUCTS } from "@/data/mock-products";
+import { productService } from "@/services/productService";
+import { Product } from "@/types";
 import { ProductCard } from "@/components/features/product-card";
 import { CatalogFilters } from "@/components/features/catalog-filters";
 import { Badge } from "@/components/ui/badge";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 function CatalogContent() {
     const searchParams = useSearchParams();
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const category = searchParams.get("category");
     const availability = searchParams.get("availability");
 
+    useEffect(() => {
+        async function fetchProducts() {
+            setLoading(true);
+            const p = await productService.getProducts();
+            setProducts(p);
+            setLoading(false);
+        }
+        fetchProducts();
+    }, []);
+
     const filteredProducts = useMemo(() => {
-        return MOCK_PRODUCTS.filter((product) => {
+        return products.filter((product) => {
             const matchesCategory = !category || category === "All" || product.category === category;
             const matchesAvailability = !availability || availability === "All" || product.availability === availability;
             return matchesCategory && matchesAvailability;
         });
-    }, [category, availability]);
+    }, [products, category, availability]);
+
+    if (loading) {
+        return (
+            <div className="flex min-h-[400px] flex-col items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-accent" />
+                <p className="mt-4 text-dark/40 font-medium">Curating your collection...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-8">
