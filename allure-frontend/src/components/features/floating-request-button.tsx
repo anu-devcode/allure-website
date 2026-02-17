@@ -25,7 +25,7 @@ export function FloatingRequestButton() {
         <Link
             href="/custom-preorder"
             className={cn(
-                "fixed bottom-8 right-8 z-40 transition-all duration-500 flex items-center gap-3 bg-white/90 backdrop-blur-xl border border-secondary/20 p-4 rounded-3xl shadow-2xl hover:scale-110 hover:-translate-y-2 active:scale-95 group overflow-hidden",
+                "fixed bottom-24 right-6 md:bottom-8 md:right-8 z-40 transition-all duration-500 flex items-center gap-3 bg-white border border-secondary/20 p-4 rounded-3xl shadow-2xl hover:scale-110 hover:-translate-y-2 active:scale-95 group overflow-hidden",
                 isVisible ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
             )}
         >

@@ -27,7 +27,7 @@ export function Header() {
     }, []);
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-secondary/20 bg-background/80 backdrop-blur-md">
+        <header className="sticky top-0 z-50 w-full border-b border-secondary/20 bg-white">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2">
@@ -56,16 +56,19 @@ export function Header() {
                 <div className="flex items-center gap-1 sm:gap-2">
                     <GlobalSearch />
                     <AccountDropdown />
-                    <Link href="/cart">
-                        <Button variant="ghost" size="icon" className="relative">
-                            <ShoppingBag className="h-5 w-5" />
-                            {mounted && itemCount > 0 && (
-                                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-dark">
-                                    {itemCount}
-                                </span>
-                            )}
-                        </Button>
-                    </Link>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="relative"
+                        onClick={() => useCartStore.getState().setCartOpen(true)}
+                    >
+                        <ShoppingBag className="h-5 w-5" />
+                        {mounted && itemCount > 0 && (
+                            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-dark">
+                                {itemCount}
+                            </span>
+                        )}
+                    </Button>
                     <Button
                         variant="ghost"
                         size="icon"
@@ -80,7 +83,7 @@ export function Header() {
             {/* Mobile Navigation */}
             {isMenuOpen && (
                 <div className="animate-in slide-in-from-top-4 md:hidden">
-                    <nav className="flex flex-col border-t border-secondary/10 bg-background p-4">
+                    <nav className="flex flex-col border-t border-secondary/10 bg-white p-4">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.name}

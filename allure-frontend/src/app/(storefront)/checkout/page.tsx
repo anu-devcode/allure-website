@@ -18,6 +18,50 @@ export default function CheckoutPage() {
 
     const [orderId] = useState(() => `ALR-${Math.floor(Math.random() * 90000) + 10000}`);
 
+    const steps = [
+        { id: 1, label: "Information", icon: User },
+        { id: 2, label: "Payment", icon: CreditCard },
+        { id: 3, label: "Confirmation", icon: CheckCircle2 },
+    ];
+
+    const StepVisualizer = () => (
+        <div className="mb-12">
+            <div className="flex items-center justify-between relative max-w-md mx-auto">
+                {/* Progress Line Background */}
+                <div className="absolute top-1/2 left-0 w-full h-0.5 bg-secondary/10 -translate-y-1/2 z-0" />
+
+                {/* Active Progress Line */}
+                <div
+                    className="absolute top-1/2 left-0 h-0.5 bg-accent -translate-y-1/2 z-0 transition-all duration-500 ease-out"
+                    style={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
+                />
+
+                {steps.map((s, i) => {
+                    const Icon = s.icon;
+                    const isActive = step >= s.id;
+                    const isCurrent = step === s.id;
+
+                    return (
+                        <div key={s.id} className="relative z-10 flex flex-col items-center gap-3">
+                            <div
+                                className={`h-12 w-12 rounded-full flex items-center justify-center transition-all duration-500 ${isActive
+                                        ? "bg-accent text-white shadow-lg shadow-accent/20 scale-110"
+                                        : "bg-white text-dark/30 border-2 border-secondary/10"
+                                    }`}
+                            >
+                                <Icon className={`h-5 w-5 ${isCurrent ? "animate-pulse" : ""}`} />
+                            </div>
+                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-500 ${isActive ? "text-dark" : "text-dark/20"
+                                }`}>
+                                {s.label}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+
     if (items.length === 0 && step < 3) {
         return (
             <div className="container mx-auto px-4 py-24 text-center">
@@ -49,6 +93,7 @@ export default function CheckoutPage() {
     if (step === 3) {
         return (
             <div className="container mx-auto max-w-2xl px-4 py-16 md:py-24">
+                <StepVisualizer />
                 <div className="flex flex-col gap-10 text-center animate-slide-up-fade">
                     <div className="flex justify-center">
                         <div className="bg-primary/30 p-10 rounded-full shadow-2xl shadow-primary/20 relative">
@@ -95,6 +140,7 @@ export default function CheckoutPage() {
     if (step === 2) {
         return (
             <div className="container mx-auto max-w-2xl px-4 py-16">
+                <StepVisualizer />
                 <button onClick={() => setStep(1)} className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-dark/60 hover:text-accent transition-colors">
                     <ChevronLeft className="h-4 w-4" /> Back to Information
                 </button>
@@ -154,6 +200,7 @@ export default function CheckoutPage() {
 
     return (
         <div className="container mx-auto max-w-2xl px-4 py-16">
+            <StepVisualizer />
             <Link href="/cart" className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-dark/60 hover:text-accent transition-colors">
                 <ChevronLeft className="h-4 w-4" /> Back to Cart
             </Link>

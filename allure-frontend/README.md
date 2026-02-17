@@ -1,5 +1,13 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## 🔐 Mock Admin Credentials (Demo)
+Use these credentials to access the Admin Dashboard at `/admin/login`:
+
+- **Username**: `admin` | **Password**: `admin123`
+- **Username**: `owner` | **Password**: `securepass`
+
+---
+
 ## Getting Started
 
 First, run the development server:

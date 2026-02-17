@@ -9,10 +9,12 @@ export interface CartItem extends Product {
 
 interface CartStore {
     items: CartItem[];
+    isCartOpen: boolean;
     addItem: (product: Product, quantity?: number, options?: { [key: string]: string }) => void;
     removeItem: (productId: string, options?: { [key: string]: string }) => void;
     updateQuantity: (productId: string, quantity: number, options?: { [key: string]: string }) => void;
     clearCart: () => void;
+    setCartOpen: (open: boolean) => void;
     getTotalPrice: () => number;
     getItemCount: () => number;
 }
@@ -21,6 +23,7 @@ export const useCartStore = create<CartStore>()(
     persist(
         (set, get) => ({
             items: [],
+            isCartOpen: false,
             addItem: (product, quantity = 1, options) => {
                 const items = get().items;
                 const existingItemIndex = items.findIndex(
@@ -31,9 +34,9 @@ export const useCartStore = create<CartStore>()(
                     const newItems = [...items];
                     const item = newItems[existingItemIndex]!;
                     newItems[existingItemIndex] = { ...item, quantity: item.quantity + quantity };
-                    set({ items: newItems });
+                    set({ items: newItems, isCartOpen: true });
                 } else {
-                    set({ items: [...items, { ...product, quantity, selectedOptions: options }] });
+                    set({ items: [...items, { ...product, quantity, selectedOptions: options }], isCartOpen: true });
                 }
             },
             removeItem: (productId, options) => {
@@ -53,6 +56,7 @@ export const useCartStore = create<CartStore>()(
                 });
             },
             clearCart: () => set({ items: [] }),
+            setCartOpen: (open) => set({ isCartOpen: open }),
             getTotalPrice: () => {
                 return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
             },

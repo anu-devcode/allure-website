@@ -1,12 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { MOCK_PRODUCTS } from "@/data/mock-products";
+import { Product } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, MoreVertical, Edit2, Trash2, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminProductsPage() {
+    const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+
+    const handleDelete = (id: string) => {
+        if (confirm("Are you sure you want to delete this product?")) {
+            setProducts(products.filter(p => p.id !== id));
+        }
+    };
+
     return (
         <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -58,7 +68,7 @@ export default function AdminProductsPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-secondary/10">
-                        {MOCK_PRODUCTS.map((product) => (
+                        {products.map((product) => (
                             <tr key={product.id} className="hover:bg-secondary/5 transition-colors group">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-4">
@@ -88,7 +98,12 @@ export default function AdminProductsPage() {
                                                 <Edit2 className="h-4 w-4" />
                                             </Button>
                                         </Link>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-dark/40 hover:text-red-500">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-lg text-dark/40 hover:text-red-500"
+                                            onClick={() => handleDelete(product.id)}
+                                        >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>

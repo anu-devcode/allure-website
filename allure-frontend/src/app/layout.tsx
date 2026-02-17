@@ -18,10 +18,6 @@ export const metadata: Metadata = {
   description: "Premiun online shopping experience for modern urban buyers.",
 };
 
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { FloatingRequestButton } from "@/components/features/floating-request-button";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,12 +28,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${poppins.variable} antialiased min-h-screen flex flex-col`}
       >
-        <Header />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <Footer />
-        <FloatingRequestButton />
+        {children}
       </body>
     </html>
   );
