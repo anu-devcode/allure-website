@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { ShoppingCart, Plus } from "lucide-react";
+import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { Product } from "@/types";
 
@@ -15,12 +15,40 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
     const addItem = useCartStore((state) => state.addItem);
+    const updateQuantity = useCartStore((state) => state.updateQuantity);
+    const removeItem = useCartStore((state) => state.removeItem);
+    const cartItem = useCartStore((state) =>
+        state.items.find((item) => item.id === product.id)
+    );
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
         addItem(product, 1, undefined);
     };
+
+    const handleIncrement = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cartItem) {
+            updateQuantity(product.id, cartItem.quantity + 1, cartItem.selectedOptions);
+        }
+    };
+
+    const handleDecrement = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cartItem) {
+            if (cartItem.quantity <= 1) {
+                removeItem(product.id, cartItem.selectedOptions);
+            } else {
+                updateQuantity(product.id, cartItem.quantity - 1, cartItem.selectedOptions);
+            }
+        }
+    };
+
+    const isSoldOut = product.availability === "Sold Out";
+    const quantity = cartItem?.quantity ?? 0;
 
     return (
         <Card className="group overflow-hidden border-none bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 rounded-[2rem] animate-slide-up-fade">
@@ -33,7 +61,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
                 <div className="absolute left-4 top-4 flex flex-col gap-2">
-                    <Badge variant={product.availability === "Sold Out" ? "destructive" : "secondary"} className="shadow-lg border-none px-4 py-1.5 font-bold tracking-tight">
+                    <Badge variant={isSoldOut ? "destructive" : "secondary"} className="shadow-lg border-none px-4 py-1.5 font-bold tracking-tight">
                         {product.availability}
                     </Badge>
                 </div>
@@ -62,16 +90,44 @@ export function ProductCard({ product }: ProductCardProps) {
                 <p className="font-display text-lg font-black text-accent">{product.price.toLocaleString()} <span className="text-xs font-bold opacity-60">ETB</span></p>
             </CardContent>
             <CardFooter className="p-5 pt-0">
-                <Button
-                    variant="primary"
-                    size="lg"
-                    className="w-full gap-2 rounded-2xl h-12 font-bold shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                    onClick={handleAddToCart}
-                    disabled={product.availability === "Sold Out"}
-                >
-                    <Plus className="h-4 w-4" />
-                    {product.availability === "Sold Out" ? "Out of Stock" : "Add to Bag"}
-                </Button>
+                {isSoldOut ? (
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        className="w-full gap-2 rounded-2xl h-12 font-bold shadow-lg shadow-primary/10 transition-all opacity-60"
+                        disabled
+                    >
+                        Out of Stock
+                    </Button>
+                ) : quantity > 0 ? (
+                    <div className="w-full flex items-center h-12 rounded-2xl overflow-hidden border-2 border-accent/20 bg-accent/5 transition-all shadow-sm">
+                        <button
+                            onClick={handleDecrement}
+                            className="flex items-center justify-center h-full w-14 text-accent hover:bg-accent hover:text-white transition-all active:scale-90"
+                        >
+                            <Minus className="h-4 w-4" />
+                        </button>
+                        <div className="flex-1 flex items-center justify-center">
+                            <span className="font-display font-bold text-lg text-accent">{quantity}</span>
+                        </div>
+                        <button
+                            onClick={handleIncrement}
+                            className="flex items-center justify-center h-full w-14 text-accent hover:bg-accent hover:text-white transition-all active:scale-90"
+                        >
+                            <Plus className="h-4 w-4" />
+                        </button>
+                    </div>
+                ) : (
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        className="w-full gap-2 rounded-2xl h-12 font-bold shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        onClick={handleAddToCart}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add to Cart
+                    </Button>
+                )}
             </CardFooter>
         </Card>
     );

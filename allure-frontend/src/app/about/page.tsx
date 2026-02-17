@@ -54,27 +54,27 @@ export default function AboutPage() {
     return (
         <div className="flex flex-col gap-0 overflow-x-hidden">
             {/* Hero Section */}
-            <section className="relative overflow-hidden bg-cream px-4 py-16 md:py-24">
+            <section className="relative overflow-hidden bg-cream px-4 py-12 md:py-20">
                 <div className="container relative z-10 mx-auto text-center">
-                    <div className="animate-slide-up-fade flex flex-col items-center gap-6">
-                        <div className="inline-block rounded-full bg-primary/20 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-accent md:text-xs">
+                    <div className="animate-slide-up-fade flex flex-col items-center gap-4">
+                        <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-accent border border-primary/20">
                             Our Journey
                         </div>
-                        <h1 className="font-display text-4xl font-bold text-dark md:text-6xl lg:text-7xl">
+                        <h1 className="font-display text-4xl font-bold text-dark md:text-6xl lg:text-7xl tracking-tight leading-[1.1]">
                             The Allure <span className="italic text-primary">Story</span>.
                         </h1>
-                        <p className="max-w-xl text-base text-dark/60 md:text-lg lg:text-xl">
+                        <p className="max-w-lg text-sm text-dark/50 md:text-base lg:text-lg leading-relaxed">
                             Elevating online shopping in Ethiopia with beauty, trust, and speed.
                         </p>
                     </div>
                 </div>
                 {/* Background Ornaments */}
-                <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl md:h-[400px] md:w-[400px]" />
-                <div className="absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-secondary/10 blur-3xl md:h-[400px] md:w-[400px]" />
+                <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl md:h-[400px] md:w-[400px]" />
+                <div className="absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-secondary/5 blur-3xl md:h-[400px] md:w-[400px]" />
             </section>
 
             {/* Our Story Section */}
-            <section className="container mx-auto px-4 py-12 md:py-20">
+            <section className="container mx-auto px-4 py-10 md:py-16">
                 <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
                     <div className="animate-slide-up-fade relative aspect-[4/5] w-full overflow-hidden rounded-[1.5rem] shadow-lg md:aspect-video lg:aspect-[4/5]">
                         <Image

@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingBag, Search, Menu, X } from "lucide-react";
+import { ShoppingBag, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { GlobalSearch } from "@/components/features/global-search";
+import { AccountDropdown } from "@/components/features/account-dropdown";
 
 const navLinks = [
     { name: "Home", href: "/" },
     { name: "Catalog", href: "/catalog" },
+    { name: "Order Us", href: "/custom-preorder" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
 ];
@@ -51,10 +53,9 @@ export function Header() {
                 </nav>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="hidden sm:flex">
-                        <Search className="h-5 w-5" />
-                    </Button>
+                <div className="flex items-center gap-1 sm:gap-2">
+                    <GlobalSearch />
+                    <AccountDropdown />
                     <Link href="/cart">
                         <Button variant="ghost" size="icon" className="relative">
                             <ShoppingBag className="h-5 w-5" />

@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { FloatingRequestButton } from "@/components/features/floating-request-button";
 
 export default function RootLayout({
   children,
@@ -36,6 +37,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <FloatingRequestButton />
       </body>
     </html>
   );

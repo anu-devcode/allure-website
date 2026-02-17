@@ -22,7 +22,7 @@ export default function CartPage() {
                         </div>
                     </div>
                     <div className="flex flex-col gap-3">
-                        <h1 className="font-display text-4xl font-bold text-dark">Your bag is empty</h1>
+                        <h1 className="font-display text-4xl font-bold text-dark">Your cart is empty</h1>
                         <p className="text-dark/60 max-w-sm mx-auto text-lg italic">"Aesthetics are meaningful only when shared."</p>
                     </div>
                     <Link href="/catalog">
@@ -39,7 +39,7 @@ export default function CartPage() {
                 <Link href="/catalog" className="inline-flex items-center gap-2 text-sm font-medium text-dark/60 hover:text-accent transition-colors">
                     <ChevronLeft className="h-4 w-4" /> Back to Shopping
                 </Link>
-                <h1 className="font-display text-4xl font-bold text-dark md:text-5xl tracking-tight">Shopping Bag</h1>
+                <h1 className="font-display text-4xl font-bold text-dark md:text-5xl tracking-tight">Shopping Cart</h1>
             </div>
 
             <div className="grid grid-cols-1 gap-16 lg:grid-cols-3">
