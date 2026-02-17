@@ -5,6 +5,7 @@ import { MOCK_PRODUCTS } from "@/data/mock-products";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { Testimonials } from "@/components/features/testimonials";
 
 export default function Home() {
   const featuredProducts = MOCK_PRODUCTS.slice(0, 4);
@@ -48,6 +49,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Testimonials Section */}
+      <Testimonials />
     </div>
   );
 }

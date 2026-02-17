@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ChevronLeft, CreditCard, Banknote, Smartphone, Package, ArrowRight } from "lucide-react";
+import { CheckCircle2, ChevronLeft, CreditCard, Banknote, Smartphone, Package, ArrowRight, MapPin, Phone, User } from "lucide-react";
 import Link from "next/link";
 
 export default function CheckoutPage() {
     const { items, getTotalPrice, clearCart } = useCartStore();
-    const [step, setStep] = useState(1); // 1: Info, 2: Payment Instructions
+    const [step, setStep] = useState(1); // 1: Info, 2: Payment, 3: Success
 
     const [formData, setFormData] = useState({
         name: "",
@@ -16,11 +16,20 @@ export default function CheckoutPage() {
         city: "Addis Ababa",
     });
 
-    if (items.length === 0 && step === 1) {
+    const [orderId] = useState(() => `ALR-${Math.floor(Math.random() * 90000) + 10000}`);
+
+    if (items.length === 0 && step < 3) {
         return (
             <div className="container mx-auto px-4 py-24 text-center">
-                <h1 className="text-2xl font-bold">Nothing to checkout</h1>
-                <Link href="/catalog"><Button className="mt-4">Back to Catalog</Button></Link>
+                <div className="flex flex-col items-center gap-6 animate-slide-up-fade">
+                    <div className="bg-secondary/10 p-8 rounded-full">
+                        <Package className="h-16 w-16 text-accent/40" />
+                    </div>
+                    <h1 className="font-display text-3xl font-bold text-dark">Nothing to checkout</h1>
+                    <Link href="/catalog">
+                        <Button className="mt-4 rounded-full px-10 h-14">Return to Catalog</Button>
+                    </Link>
+                </div>
             </div>
         );
     }
@@ -28,68 +37,115 @@ export default function CheckoutPage() {
     const handleNext = (e: React.FormEvent) => {
         e.preventDefault();
         setStep(2);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleFinish = () => {
+    const handleConfirm = () => {
+        setStep(3);
         clearCart();
-        // In real app, send data to backend here
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    if (step === 3) {
+        return (
+            <div className="container mx-auto max-w-2xl px-4 py-16 md:py-24">
+                <div className="flex flex-col gap-10 text-center animate-slide-up-fade">
+                    <div className="flex justify-center">
+                        <div className="bg-primary/30 p-10 rounded-full shadow-2xl shadow-primary/20 relative">
+                            <CheckCircle2 className="h-20 w-20 text-accent" />
+                            <div className="absolute -top-2 -right-2 h-10 w-10 rounded-full bg-white flex items-center justify-center text-xl shadow-lg">✨</div>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                        <h1 className="font-display text-5xl font-bold text-dark tracking-tight">Order Placed!</h1>
+                        <p className="text-dark/60 text-lg max-w-md mx-auto">Thank you <span className="text-dark font-bold">{formData.name}</span>, your order has been successfully registered in our system.</p>
+                        <div className="inline-block self-center rounded-full bg-accent/10 px-6 py-2 text-sm font-black text-accent uppercase tracking-widest border border-accent/20">
+                            ID: {orderId}
+                        </div>
+                    </div>
+
+                    <div className="rounded-[3rem] bg-white p-10 text-left flex flex-col gap-8 shadow-2xl shadow-secondary/10 border border-secondary/10">
+                        <div className="flex flex-col gap-2">
+                            <h3 className="font-display font-bold text-2xl text-dark">Final Step</h3>
+                            <p className="text-sm text-dark/70 leading-relaxed">
+                                To fully confirm your purchase, please complete the manual payment. Orders without payment screenshots are automatically cancelled after 2 hours.
+                            </p>
+                        </div>
+
+                        <div className="bg-accent p-8 rounded-[2rem] text-white shadow-xl shadow-accent/20">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 opacity-80">Send Screenshot to</p>
+                            <div className="flex items-center gap-4 text-xl font-bold">
+                                <Smartphone className="h-6 w-6" />
+                                <span>+251 911 223 344</span>
+                            </div>
+                            <p className="text-xs mt-2 opacity-70">(Telegram or WhatsApp)</p>
+                        </div>
+
+                        <Link href="/" className="w-full">
+                            <Button variant="primary" size="lg" className="w-full h-16 rounded-2xl font-bold shadow-lg transition-all hover:scale-[1.02]">
+                                Return to Store
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (step === 2) {
         return (
             <div className="container mx-auto max-w-2xl px-4 py-16">
-                <div className="flex flex-col gap-8 text-center">
-                    <div className="flex justify-center">
-                        <div className="bg-primary/30 p-8 rounded-full shadow-lg shadow-primary/20">
-                            <CheckCircle2 className="h-16 w-16 text-accent" />
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <h1 className="font-display text-5xl font-bold text-dark">Order Received!</h1>
-                        <p className="text-dark/60 text-lg">Thank you {formData.name}, your order has been registered.</p>
-                        <p className="text-accent font-bold">Order #: ORD-{Math.floor(Math.random() * 9000) + 1000}</p>
-                    </div>
+                <button onClick={() => setStep(1)} className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-dark/60 hover:text-accent transition-colors">
+                    <ChevronLeft className="h-4 w-4" /> Back to Information
+                </button>
 
-                    <div className="rounded-4xl bg-white p-8 text-left flex flex-col gap-8 shadow-2xl shadow-secondary/10 border border-secondary/10">
-                        <div className="flex flex-col gap-3">
-                            <h3 className="font-bold text-2xl text-dark">How to Pay</h3>
-                            <p className="text-sm text-dark/70 leading-relaxed">
-                                To confirm your order, please complete the manual payment below.
-                                <span className="block mt-2 font-bold text-accent">IMPORTANT: Send a screenshot of your payment to +251 911 223 344 (Telegram/WhatsApp) to avoid order cancellation.</span>
-                            </p>
-                        </div>
+                <h1 className="font-display text-4xl font-bold text-dark mb-4 tracking-tight">Payment Instructions</h1>
+                <p className="text-dark/60 mb-10">Choose your preferred bank and follow the steps.</p>
 
-                        <div className="grid grid-cols-1 gap-6">
-                            <div className="flex items-center gap-5 p-5 rounded-3xl border-2 border-primary/20 bg-primary/5 hover:border-accent/40 transition-all cursor-pointer">
-                                <div className="h-14 w-14 bg-white rounded-2xl flex items-center justify-center text-accent shadow-sm"><Smartphone className="h-7 w-7" /></div>
-                                <div>
-                                    <p className="font-bold text-lg text-dark">Telebirr</p>
-                                    <p className="text-sm text-dark/60 font-medium">0911 223 344 (Allure Online / Abebe K.)</p>
-                                </div>
+                <div className="flex flex-col gap-8 animate-slide-up-fade">
+                    <div className="grid grid-cols-1 gap-6">
+                        <div className="group flex items-center gap-5 p-6 rounded-[2rem] border-2 border-primary/20 bg-white hover:border-accent transition-all cursor-pointer shadow-sm hover:shadow-md">
+                            <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-accent group-hover:bg-primary group-hover:text-white transition-colors">
+                                <Smartphone className="h-8 w-8" />
                             </div>
-                            <div className="flex items-center gap-5 p-5 rounded-3xl border-2 border-primary/20 bg-primary/5 hover:border-accent/40 transition-all cursor-pointer">
-                                <div className="h-14 w-14 bg-white rounded-2xl flex items-center justify-center text-accent shadow-sm"><CreditCard className="h-7 w-7" /></div>
-                                <div>
-                                    <p className="font-bold text-lg text-dark">CBE (Commercial Bank)</p>
-                                    <p className="text-sm text-dark/60 font-medium">1000123456789 (Allure Online / Abebe K.)</p>
-                                </div>
+                            <div>
+                                <p className="font-bold text-xl text-dark">Telebirr</p>
+                                <p className="text-base text-dark/60 font-medium">0911 223 344 (Allure Online)</p>
                             </div>
                         </div>
-
-                        <div className="bg-accent/5 p-6 rounded-3xl border border-accent/10">
-                            <p className="text-xs font-black text-accent uppercase tracking-[0.2em] mb-2">Summary</p>
-                            <div className="flex justify-between items-center">
-                                <p className="text-dark/70">Total to pay:</p>
-                                <p className="text-2xl font-black text-accent">{getTotalPrice().toLocaleString()} ETB</p>
+                        <div className="group flex items-center gap-5 p-6 rounded-[2rem] border-2 border-primary/20 bg-white hover:border-accent transition-all cursor-pointer shadow-sm hover:shadow-md">
+                            <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-accent group-hover:bg-primary group-hover:text-white transition-colors">
+                                <CreditCard className="h-8 w-8" />
                             </div>
-                            <p className="text-sm text-dark/60 mt-1">Delivery to: {formData.city}</p>
+                            <div>
+                                <p className="font-bold text-xl text-dark">Commercial Bank (CBE)</p>
+                                <p className="text-base text-dark/60 font-medium">1000123456789 (Allure Online)</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-4">
-                        <Link href="/" onClick={handleFinish}>
-                            <Button variant="primary" size="lg" className="w-full h-14 rounded-2xl">Confirm & Return Home</Button>
-                        </Link>
+                    <div className="rounded-[2.5rem] bg-secondary/5 p-10 flex flex-col gap-6 border border-secondary/10">
+                        <div className="flex justify-between items-end border-b border-secondary/10 pb-6">
+                            <span className="text-dark/60 font-medium">Total Payable</span>
+                            <span className="text-4xl font-black text-accent">{getTotalPrice().toLocaleString()} ETB</span>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-start gap-3">
+                                <div className="h-2 w-2 rounded-full bg-accent mt-1.5" />
+                                <p className="text-sm text-dark/70">Complete the transfer through your bank app.</p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <div className="h-2 w-2 rounded-full bg-accent mt-1.5" />
+                                <p className="text-sm text-dark/70">Take a screenshot of the successful transaction.</p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <div className="h-2 w-2 rounded-full bg-accent mt-1.5" />
+                                <p className="text-sm text-dark/70 font-bold">Your order ID is generated on the next screen.</p>
+                            </div>
+                        </div>
+                        <Button onClick={handleConfirm} variant="primary" size="lg" className="w-full h-16 rounded-2xl font-bold gap-3 mt-4">
+                            Submit Order <ArrowRight className="h-5 w-5" />
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -98,57 +154,72 @@ export default function CheckoutPage() {
 
     return (
         <div className="container mx-auto max-w-2xl px-4 py-16">
-            <Link href="/cart" className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-dark/60 hover:text-accent">
+            <Link href="/cart" className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-dark/60 hover:text-accent transition-colors">
                 <ChevronLeft className="h-4 w-4" /> Back to Cart
             </Link>
 
-            <h1 className="font-display text-4xl font-bold text-dark mb-4">Checkout</h1>
-            <p className="text-dark/60 mb-12">Please provide your information to complete the order.</p>
+            <h1 className="font-display text-4xl font-bold text-dark mb-4 tracking-tight">Order Information</h1>
+            <p className="text-dark/60 mb-12">Please provide your details for delivery.</p>
 
-            <form onSubmit={handleNext} className="flex flex-col gap-8">
-                <div className="flex flex-col gap-6">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold text-dark/80">Full Name</label>
-                        <input
-                            required
-                            type="text"
-                            value={formData.name}
-                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Enter your name"
-                            className="h-14 rounded-2xl border border-secondary/20 bg-white px-6 text-dark focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                        />
+            <form onSubmit={handleNext} className="flex flex-col gap-10 animate-slide-up-fade">
+                <div className="flex flex-col gap-8">
+                    <div className="flex flex-col gap-3">
+                        <label className="text-xs font-black uppercase tracking-[0.2em] text-dark/40 ml-1">Full Name</label>
+                        <div className="relative group">
+                            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-dark/20 group-focus-within:text-accent transition-colors">
+                                <User className="h-5 w-5" />
+                            </div>
+                            <input
+                                required
+                                type="text"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="Abebe Kebede"
+                                className="h-16 w-full rounded-2xl border-2 border-secondary/10 bg-white pl-16 pr-6 text-dark focus:border-accent focus:outline-none transition-all shadow-sm"
+                            />
+                        </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold text-dark/80">Phone Number</label>
-                        <input
-                            required
-                            type="tel"
-                            value={formData.phone}
-                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                            placeholder="09..."
-                            className="h-14 rounded-2xl border border-secondary/20 bg-white px-6 text-dark focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                        />
+                    <div className="flex flex-col gap-3">
+                        <label className="text-xs font-black uppercase tracking-[0.2em] text-dark/40 ml-1">Phone Number</label>
+                        <div className="relative group">
+                            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-dark/20 group-focus-within:text-accent transition-colors">
+                                <Phone className="h-5 w-5" />
+                            </div>
+                            <input
+                                required
+                                type="tel"
+                                value={formData.phone}
+                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                placeholder="09..."
+                                className="h-16 w-full rounded-2xl border-2 border-secondary/10 bg-white pl-16 pr-6 text-dark focus:border-accent focus:outline-none transition-all shadow-sm"
+                            />
+                        </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold text-dark/80">City</label>
-                        <select
-                            value={formData.city}
-                            onChange={e => setFormData({ ...formData, city: e.target.value })}
-                            className="h-14 rounded-2xl border border-secondary/20 bg-white px-6 text-dark focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent appearance-none bg-no-repeat bg-right"
-                        >
-                            <option>Addis Ababa</option>
-                            <option>Other (Negotiated Delivery)</option>
-                        </select>
+                    <div className="flex flex-col gap-3">
+                        <label className="text-xs font-black uppercase tracking-[0.2em] text-dark/40 ml-1">Delivery City</label>
+                        <div className="relative group">
+                            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-dark/20 group-focus-within:text-accent transition-colors">
+                                <MapPin className="h-5 w-5" />
+                            </div>
+                            <select
+                                value={formData.city}
+                                onChange={e => setFormData({ ...formData, city: e.target.value })}
+                                className="h-16 w-full rounded-2xl border-2 border-secondary/10 bg-white pl-16 pr-6 text-dark focus:border-accent focus:outline-none transition-all shadow-sm appearance-none"
+                            >
+                                <option>Addis Ababa</option>
+                                <option>Other Cities (Negotiated)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div className="rounded-3xl bg-secondary/5 p-8 flex flex-col gap-4">
+                <div className="rounded-[2.5rem] bg-dark p-10 flex flex-col gap-6 text-white shadow-2xl">
                     <div className="flex justify-between items-center">
-                        <span className="text-dark font-medium">Order Total</span>
-                        <span className="text-2xl font-bold text-accent">{getTotalPrice().toLocaleString()} ETB</span>
+                        <span className="text-white/60 font-medium">Order Total</span>
+                        <span className="text-3xl font-black text-primary">{getTotalPrice().toLocaleString()} ETB</span>
                     </div>
-                    <Button type="submit" variant="primary" size="lg" className="w-full h-14 rounded-2xl gap-2 text-lg">
-                        Register Order <ArrowRight className="h-5 w-5" />
+                    <Button type="submit" variant="primary" size="lg" className="w-full h-16 rounded-2xl gap-3 text-lg font-bold">
+                        Continue to Payment <ArrowRight className="h-5 w-5" />
                     </Button>
                 </div>
             </form>
