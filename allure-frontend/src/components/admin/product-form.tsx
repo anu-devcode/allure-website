@@ -5,33 +5,77 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Upload, Save, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Product } from "@/types";
+import { AdminCategory } from "@/services/adminProductService";
 
 interface ProductFormProps {
-    initialData?: any;
+    initialData?: Product;
     isEditing?: boolean;
+    categories: AdminCategory[];
+    onSubmit: (values: {
+        name: string;
+        categoryId: string;
+        price: number;
+        availability: Product["availability"];
+        origin?: string;
+        description: string;
+        images: string[];
+        currentSlug?: string;
+    }) => Promise<void>;
 }
 
-export function ProductForm({ initialData, isEditing = false }: ProductFormProps) {
+const categoryFallbacks = ["Dresses", "Tops", "Bottoms", "Outerwear", "Accessories"];
+
+export function ProductForm({ initialData, categories, onSubmit }: ProductFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
 
-    const [formData, setFormData] = useState(initialData || {
+    const initialCategory = categories.find((category) => category.name === initialData?.category);
+
+    const [formData, setFormData] = useState({
         name: "",
-        category: "Dresses",
+        categoryId: initialCategory?.id ?? categories[0]?.id ?? "",
         price: "",
-        availability: "In-Store",
+        availability: "In-Store" as Product["availability"],
         origin: "",
         description: "",
+        images: [] as string[],
+        currentSlug: undefined as string | undefined,
+        ...
+            (initialData
+                ? {
+                    name: initialData.name,
+                    price: String(initialData.price),
+                    availability: initialData.availability,
+                    origin: initialData.origin ?? "",
+                    description: initialData.description,
+                    images: initialData.gallery ?? (initialData.image ? [initialData.image] : []),
+                    currentSlug: initialData.slug,
+                }
+                : {}),
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        // Mock save delay
-        setTimeout(() => {
+
+        try {
+            await onSubmit({
+                name: formData.name,
+                categoryId: formData.categoryId,
+                price: Number(formData.price),
+                availability: formData.availability,
+                origin: formData.origin || undefined,
+                description: formData.description,
+                images: formData.images,
+                currentSlug: formData.currentSlug,
+            });
+
             setLoading(false);
             router.push("/admin/products");
-        }, 1000);
+        } catch {
+            setLoading(false);
+        }
     };
 
     return (
@@ -70,15 +114,15 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                             <div className="flex flex-col gap-2">
                                 <label className="text-sm font-bold text-dark/80">Category</label>
                                 <select
-                                    value={formData.category}
-                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                    value={formData.categoryId}
+                                    onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
                                     className="h-12 rounded-xl border border-secondary/20 bg-white px-4 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                                 >
-                                    <option>Dresses</option>
-                                    <option>Tops</option>
-                                    <option>Bottoms</option>
-                                    <option>Outerwear</option>
-                                    <option>Accessories</option>
+                                    {(categories.length > 0 ? categories : categoryFallbacks.map((name) => ({ id: name, name, slug: name.toLowerCase() }))).map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="flex flex-col gap-2">
@@ -113,7 +157,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                                 <label className="text-sm font-bold text-dark/80">Availability</label>
                                 <select
                                     value={formData.availability}
-                                    onChange={e => setFormData({ ...formData, availability: e.target.value })}
+                                    onChange={e => setFormData({ ...formData, availability: e.target.value as Product["availability"] })}
                                     className="h-12 rounded-xl border border-secondary/20 bg-white px-4 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                                 >
                                     <option>In-Store</option>

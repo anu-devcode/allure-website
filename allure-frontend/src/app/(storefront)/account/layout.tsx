@@ -20,33 +20,28 @@ const NAV_ITEMS = [
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
     const user = useCustomerAuth((s) => s.user);
     const isAuthenticated = useCustomerAuth((s) => s.isAuthenticated);
+    const rehydrateSession = useCustomerAuth((s) => s.rehydrateSession);
     const logout = useCustomerAuth((s) => s.logout);
     const router = useRouter();
     const pathname = usePathname();
-    const [mounted, setMounted] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
-    }, []);
+        void rehydrateSession();
+    }, [rehydrateSession]);
 
     useEffect(() => {
-        if (mounted && !isAuthenticated) {
+        if (!isAuthenticated) {
             router.push("/auth");
         }
-    }, [mounted, isAuthenticated, router]);
-
-    // Close drawer on route change
-    useEffect(() => {
-        setDrawerOpen(false);
-    }, [pathname]);
+    }, [isAuthenticated, router]);
 
     const handleLogout = () => {
         logout();
         router.push("/");
     };
 
-    if (!mounted || !isAuthenticated || !user) {
+    if (!isAuthenticated || !user) {
         return (
             <div className="min-h-[60vh] flex items-center justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
@@ -134,6 +129,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                                 <Link
                                     key={item.href}
                                     href={item.href}
+                                    onClick={() => setDrawerOpen(false)}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${active
                                             ? "bg-accent text-white font-bold shadow-md shadow-accent/20"
                                             : "text-dark/60 hover:bg-secondary/5 hover:text-dark"

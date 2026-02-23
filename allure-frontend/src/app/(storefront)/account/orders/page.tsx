@@ -1,31 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Package, Clock, CheckCircle2, Truck, XCircle } from "lucide-react";
-
-// Mock order data for display
-const MOCK_ORDERS = [
-    {
-        id: "ORD-1001",
-        date: "Feb 15, 2026",
-        total: 4500,
-        items: 2,
-        status: "Delivered",
-    },
-    {
-        id: "ORD-1002",
-        date: "Feb 10, 2026",
-        total: 3800,
-        items: 1,
-        status: "Shipped",
-    },
-    {
-        id: "ORD-1003",
-        date: "Feb 5, 2026",
-        total: 1200,
-        items: 1,
-        status: "Confirmed",
-    },
-];
+import { orderService } from "@/services/orderService";
+import { Order } from "@/types";
+import { useCustomerAuth } from "@/store/useCustomerAuth";
 
 const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string }> = {
     Pending: { icon: Clock, color: "text-yellow-600", bg: "bg-yellow-50" },
@@ -36,6 +15,42 @@ const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: stri
 };
 
 export default function OrdersPage() {
+    const token = useCustomerAuth((s) => s.token);
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadOrders = async () => {
+            if (!token) {
+                setOrders([]);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const result = await orderService.getMyOrders(token);
+                setOrders(result);
+            } catch {
+                setOrders([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void loadOrders();
+    }, [token]);
+
+    if (loading) {
+        return (
+            <div className="animate-slide-up-fade">
+                <div className="mb-8">
+                    <h1 className="font-display text-2xl font-bold text-dark tracking-tight md:text-3xl">My Orders</h1>
+                    <p className="text-sm text-dark/50 mt-1">Loading your orders...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="animate-slide-up-fade">
             <div className="mb-8">
@@ -43,7 +58,7 @@ export default function OrdersPage() {
                 <p className="text-sm text-dark/50 mt-1">Track and manage your orders.</p>
             </div>
 
-            {MOCK_ORDERS.length === 0 ? (
+            {orders.length === 0 ? (
                 <div className="rounded-[2rem] bg-white p-12 border border-secondary/10 shadow-sm text-center">
                     <div className="h-16 w-16 rounded-full bg-secondary/5 flex items-center justify-center mx-auto mb-4">
                         <Package className="h-7 w-7 text-dark/20" />
@@ -53,7 +68,7 @@ export default function OrdersPage() {
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
-                    {MOCK_ORDERS.map((order) => {
+                    {orders.map((order) => {
                         const config = statusConfig[order.status] || statusConfig.Pending;
                         const StatusIcon = config.icon;
                         return (
@@ -68,13 +83,13 @@ export default function OrdersPage() {
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <p className="text-sm font-bold text-dark">{order.id}</p>
+                                                <p className="text-sm font-bold text-dark">{order.orderNumber}</p>
                                                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.color} ${config.bg}`}>
                                                     <StatusIcon className="h-3 w-3" />
                                                     {order.status}
                                                 </span>
                                             </div>
-                                            <p className="text-xs text-dark/40 mt-0.5">{order.date} · {order.items} item{order.items > 1 ? "s" : ""}</p>
+                                            <p className="text-xs text-dark/40 mt-0.5">{new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length > 1 ? "s" : ""}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4 sm:text-right">

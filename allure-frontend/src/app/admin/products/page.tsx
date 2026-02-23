@@ -1,19 +1,69 @@
 "use client";
 
-import { useState } from "react";
-import { MOCK_PRODUCTS } from "@/data/mock-products";
+import { useEffect, useMemo, useState } from "react";
 import { Product } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, MoreVertical, Edit2, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { adminProductService } from "@/services/adminProductService";
+import { useAdminAuth } from "@/store/useAdminAuth";
 
 export default function AdminProductsPage() {
-    const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+    const token = useAdminAuth((s) => s.token);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [query, setQuery] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("All Categories");
+    const [statusFilter, setStatusFilter] = useState("All Status");
 
-    const handleDelete = (id: string) => {
+    useEffect(() => {
+        const loadProducts = async () => {
+            try {
+                const result = await adminProductService.getProducts();
+                setProducts(result);
+            } catch {
+                setProducts([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void loadProducts();
+    }, []);
+
+    const filteredProducts = useMemo(() => {
+        const normalizedQuery = query.trim().toLowerCase();
+
+        return products.filter((product) => {
+            const matchesQuery = !normalizedQuery ||
+                product.name.toLowerCase().includes(normalizedQuery) ||
+                product.category.toLowerCase().includes(normalizedQuery);
+
+            const matchesCategory = categoryFilter === "All Categories" || product.category === categoryFilter;
+            const matchesStatus = statusFilter === "All Status" || product.availability === statusFilter;
+
+            return matchesQuery && matchesCategory && matchesStatus;
+        });
+    }, [products, query, categoryFilter, statusFilter]);
+
+    const uniqueCategories = useMemo(
+        () => ["All Categories", ...Array.from(new Set(products.map((product) => product.category)))],
+        [products]
+    );
+
+    const handleDelete = async (id: string) => {
+        if (!token) {
+            return;
+        }
+
         if (confirm("Are you sure you want to delete this product?")) {
-            setProducts(products.filter(p => p.id !== id));
+            try {
+                await adminProductService.deleteProduct(token, id);
+                setProducts((currentProducts) => currentProducts.filter((product) => product.id !== id));
+            } catch {
+                return;
+            }
         }
     };
 
@@ -38,19 +88,32 @@ export default function AdminProductsPage() {
                     <input
                         type="text"
                         placeholder="Search products..."
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
                         className="w-full rounded-xl border border-secondary/10 bg-secondary/5 py-2 pl-10 pr-4 text-sm focus:bg-white focus:outline-none focus:ring-1 focus:ring-accent transition-all"
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <select className="text-sm bg-secondary/5 border-none rounded-xl px-4 py-2 focus:ring-1 focus:ring-accent outline-none">
-                        <option>All Categories</option>
-                        <option>Dresses</option>
-                        <option>Tops</option>
+                    <select
+                        value={categoryFilter}
+                        onChange={(event) => setCategoryFilter(event.target.value)}
+                        className="text-sm bg-secondary/5 border-none rounded-xl px-4 py-2 focus:ring-1 focus:ring-accent outline-none"
+                    >
+                        {uniqueCategories.map((category) => (
+                            <option key={category} value={category}>
+                                {category}
+                            </option>
+                        ))}
                     </select>
-                    <select className="text-sm bg-secondary/5 border-none rounded-xl px-4 py-2 focus:ring-1 focus:ring-accent outline-none">
+                    <select
+                        value={statusFilter}
+                        onChange={(event) => setStatusFilter(event.target.value)}
+                        className="text-sm bg-secondary/5 border-none rounded-xl px-4 py-2 focus:ring-1 focus:ring-accent outline-none"
+                    >
                         <option>All Status</option>
                         <option>In-Store</option>
                         <option>Pre-Order</option>
+                        <option>Sold Out</option>
                     </select>
                 </div>
             </div>
@@ -68,7 +131,15 @@ export default function AdminProductsPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-secondary/10">
-                        {products.map((product) => (
+                        {loading ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-8 text-center text-sm text-dark/40">Loading products...</td>
+                            </tr>
+                        ) : filteredProducts.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-8 text-center text-sm text-dark/40">No products found.</td>
+                            </tr>
+                        ) : filteredProducts.map((product) => (
                             <tr key={product.id} className="hover:bg-secondary/5 transition-colors group">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-4">
@@ -102,7 +173,7 @@ export default function AdminProductsPage() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8 rounded-lg text-dark/40 hover:text-red-500"
-                                            onClick={() => handleDelete(product.id)}
+                                            onClick={() => void handleDelete(product.id)}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { MOCK_PRODUCTS } from "@/data/mock-products";
 import { Product } from "@/types";
+import { productService } from "@/services/productService";
 
 // Static pages that are searchable
 const SITE_PAGES = [
@@ -31,6 +31,7 @@ interface GlobalSearchProps {
 export function GlobalSearch({ onClose }: GlobalSearchProps) {
     const [query, setQuery] = useState("");
     const [isExpanded, setIsExpanded] = useState(false);
+    const [products, setProducts] = useState<Product[]>([]);
     const [productResults, setProductResults] = useState<Product[]>([]);
     const [pageResults, setPageResults] = useState<typeof SITE_PAGES>([]);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +72,19 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
 
     // Search logic
     useEffect(() => {
+        const loadProducts = async () => {
+            try {
+                const result = await productService.getProducts();
+                setProducts(result);
+            } catch {
+                setProducts([]);
+            }
+        };
+
+        void loadProducts();
+    }, []);
+
+    useEffect(() => {
         if (!query.trim()) {
             setProductResults([]);
             setPageResults([]);
@@ -80,7 +94,7 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
         const searchLower = query.toLowerCase().trim();
 
         // Search products
-        const matchedProducts = MOCK_PRODUCTS.filter(
+        const matchedProducts = products.filter(
             (p) =>
                 p.name.toLowerCase().includes(searchLower) ||
                 p.description.toLowerCase().includes(searchLower) ||
@@ -97,7 +111,7 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
 
         setProductResults(matchedProducts);
         setPageResults(matchedPages);
-    }, [query]);
+    }, [query, products]);
 
     const handleProductClick = (productId: string) => {
         toggleSearch();

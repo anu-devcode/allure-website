@@ -7,6 +7,8 @@ import { Product } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/useCartStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
+import { useCustomerAuth } from "@/store/useCustomerAuth";
 import {
     ShoppingBag, Truck, Info, Check, ChevronLeft, Star, Heart, Share2,
     Package, RotateCcw, Shield, MessageSquare
@@ -54,6 +56,8 @@ export default function ProductPage({ params }: ProductPageProps) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [imageTransitioning, setImageTransitioning] = useState(false);
     const addItem = useCartStore((state) => state.addItem);
+    const token = useCustomerAuth((state) => state.token);
+    const toggleWishlist = useWishlistStore((state) => state.toggleItem);
 
     useEffect(() => {
         async function fetchProduct() {
@@ -102,7 +106,12 @@ export default function ProductPage({ params }: ProductPageProps) {
         addItem(product, quantity, selectedOptions);
     };
 
+    const handleWishlistToggle = async () => {
+        await toggleWishlist(product, token);
+    };
+
     const currentImage = galleryImages[selectedImageIndex] || product.image;
+    const isWishlisted = useWishlistStore((state) => state.isWishlisted(product.id));
 
     return (
         <div className="animate-page-fade-in">
@@ -130,8 +139,11 @@ export default function ProductPage({ params }: ProductPageProps) {
                             </div>
                             {/* Action Buttons */}
                             <div className="absolute right-5 top-5 flex flex-col gap-2.5 z-10">
-                                <button className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-dark backdrop-blur-md transition-all hover:bg-white hover:text-red-500 hover:scale-110 active:scale-95 shadow-sm">
-                                    <Heart className="h-4.5 w-4.5" />
+                                <button
+                                    onClick={handleWishlistToggle}
+                                    className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-dark backdrop-blur-md transition-all hover:bg-white hover:text-red-500 hover:scale-110 active:scale-95 shadow-sm"
+                                >
+                                    <Heart className={`h-4.5 w-4.5 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
                                 </button>
                                 <button className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-dark backdrop-blur-md transition-all hover:bg-white hover:text-accent hover:scale-110 active:scale-95 shadow-sm">
                                     <Share2 className="h-4.5 w-4.5" />

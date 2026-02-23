@@ -18,24 +18,37 @@ function CatalogContent() {
 
     const category = searchParams.get("category");
     const availability = searchParams.get("availability");
+    const searchQuery = searchParams.get("search");
 
     useEffect(() => {
         async function fetchProducts() {
             setLoading(true);
-            const p = await productService.getProducts();
-            setProducts(p);
+            try {
+                const p = await productService.getProducts();
+                setProducts(p);
+            } catch {
+                setProducts([]);
+            }
             setLoading(false);
         }
         fetchProducts();
     }, []);
 
     const filteredProducts = useMemo(() => {
+        const normalizedSearch = searchQuery?.trim().toLowerCase() ?? "";
+
         return products.filter((product) => {
             const matchesCategory = !category || category === "All" || product.category === category;
             const matchesAvailability = !availability || availability === "All" || product.availability === availability;
-            return matchesCategory && matchesAvailability;
+            const matchesSearch = !normalizedSearch ||
+                product.name.toLowerCase().includes(normalizedSearch) ||
+                product.description.toLowerCase().includes(normalizedSearch) ||
+                product.category.toLowerCase().includes(normalizedSearch) ||
+                product.origin?.toLowerCase().includes(normalizedSearch);
+
+            return matchesCategory && matchesAvailability && matchesSearch;
         });
-    }, [products, category, availability]);
+    }, [products, category, availability, searchQuery]);
 
     if (loading) {
         return (

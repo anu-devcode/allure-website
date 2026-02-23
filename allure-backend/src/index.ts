@@ -7,6 +7,7 @@ import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import cmsRoutes from './routes/cmsRoutes.js';
 import customRequestRoutes from './routes/customRequestRoutes.js';
+import wishlistRoutes from './routes/wishlistRoutes.js';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/custom-requests', customRequestRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {

@@ -13,6 +13,8 @@ export default function ProfilePage() {
     const [editPhone, setEditPhone] = useState("");
     const [editCity, setEditCity] = useState("");
     const [saved, setSaved] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -24,8 +26,18 @@ export default function ProfilePage() {
 
     if (!user) return null;
 
-    const handleSave = () => {
-        updateProfile({ name: editName, phone: editPhone, city: editCity });
+    const handleSave = async () => {
+        setSaving(true);
+        setSaveError(null);
+
+        const ok = await updateProfile({ name: editName, phone: editPhone, city: editCity });
+        setSaving(false);
+
+        if (!ok) {
+            setSaveError("Could not update profile. Please try again.");
+            return;
+        }
+
         setIsEditing(false);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
@@ -65,12 +77,18 @@ export default function ProfilePage() {
                         <Button variant="ghost" onClick={handleCancel} className="gap-1.5 text-dark/40 hover:text-dark/60 font-bold">
                             <X className="h-4 w-4" /> Cancel
                         </Button>
-                        <Button variant="primary" onClick={handleSave} className="gap-1.5 font-bold rounded-xl shadow-md">
-                            <Check className="h-4 w-4" /> Save Changes
+                        <Button variant="primary" onClick={() => void handleSave()} className="gap-1.5 font-bold rounded-xl shadow-md" disabled={saving}>
+                            <Check className="h-4 w-4" /> {saving ? "Saving..." : "Save Changes"}
                         </Button>
                     </div>
                 )}
             </div>
+
+            {saveError && (
+                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-2xl text-sm font-medium border border-red-100 flex items-center gap-2 animate-slide-up-fade">
+                    <X className="h-4 w-4" /> {saveError}
+                </div>
+            )}
 
             {saved && (
                 <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-2xl text-sm font-medium border border-green-100 flex items-center gap-2 animate-slide-up-fade">

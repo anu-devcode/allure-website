@@ -5,8 +5,10 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { Plus, Minus, Heart } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
+import { useCustomerAuth } from "@/store/useCustomerAuth";
 import { Product } from "@/types";
 
 interface ProductCardProps {
@@ -17,6 +19,9 @@ export function ProductCard({ product }: ProductCardProps) {
     const addItem = useCartStore((state) => state.addItem);
     const updateQuantity = useCartStore((state) => state.updateQuantity);
     const removeItem = useCartStore((state) => state.removeItem);
+    const token = useCustomerAuth((state) => state.token);
+    const toggleWishlist = useWishlistStore((state) => state.toggleItem);
+    const isWishlisted = useWishlistStore((state) => state.isWishlisted(product.id));
     const cartItem = useCartStore((state) =>
         state.items.find((item) => item.id === product.id)
     );
@@ -50,6 +55,12 @@ export function ProductCard({ product }: ProductCardProps) {
     const isSoldOut = product.availability === "Sold Out";
     const quantity = cartItem?.quantity ?? 0;
 
+    const handleWishlistToggle = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await toggleWishlist(product, token);
+    };
+
     return (
         <Card className="group overflow-hidden border-none bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 rounded-[2rem] animate-slide-up-fade">
             <Link href={`/product/${product.id}`} className="block relative aspect-[4/5] overflow-hidden rounded-[1.75rem] m-2">
@@ -65,6 +76,13 @@ export function ProductCard({ product }: ProductCardProps) {
                         {product.availability}
                     </Badge>
                 </div>
+                <button
+                    onClick={handleWishlistToggle}
+                    className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-dark/70 shadow-sm backdrop-blur-md transition-all hover:scale-105 hover:text-red-500"
+                    aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                    <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
+                </button>
                 {product.origin && (
                     <div className="absolute bottom-4 left-4">
                         <Badge variant="outline" className="bg-white/90 backdrop-blur-md shadow-sm border-none text-[10px] font-black uppercase tracking-widest px-3 py-1 text-accent">

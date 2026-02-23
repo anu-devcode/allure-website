@@ -1,13 +1,13 @@
 "use client";
 
-import { use, useState } from "react";
-import { MOCK_ORDERS } from "@/data/mock-orders";
+import { use, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Phone, MapPin, Package, CheckCircle2, XCircle, Truck, Clock } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { Order } from "@/types";
+import { useAdminAuth } from "@/store/useAdminAuth";
+import { adminOrderService } from "@/services/adminOrderService";
 
 interface OrderDetailPageProps {
     params: Promise<{ id: string }>;
@@ -15,9 +15,54 @@ interface OrderDetailPageProps {
 
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     const { id } = use(params);
-    const order = MOCK_ORDERS.find((o) => o.id === id);
+    const token = useAdminAuth((s) => s.token);
+    const [order, setOrder] = useState<Order | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+    const [nextStatus, setNextStatus] = useState<Order["status"]>("Confirmed");
 
-    if (!order) return notFound();
+    useEffect(() => {
+        const loadOrder = async () => {
+            if (!token) {
+                setOrder(null);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const result = await adminOrderService.getOrderById(token, id);
+                setOrder(result);
+            } catch {
+                setOrder(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void loadOrder();
+    }, [id, token]);
+
+    const updateOrder = async (payload: { status?: Order["status"]; paymentStatus?: Order["paymentStatus"] }) => {
+        if (!token || !order) {
+            return;
+        }
+
+        try {
+            setStatusUpdateLoading(true);
+            const updated = await adminOrderService.updateOrderStatus(token, order.id, payload);
+            setOrder(updated);
+        } finally {
+            setStatusUpdateLoading(false);
+        }
+    };
+
+    if (loading) {
+        return <div className="text-sm text-dark/40">Loading order...</div>;
+    }
+
+    if (!order) {
+        return <div className="text-sm text-dark/40">Order not found.</div>;
+    }
 
     return (
         <div className="flex flex-col gap-8">
@@ -27,16 +72,26 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                         <ChevronLeft className="h-4 w-4" /> Back to Orders
                     </Link>
                     <div className="flex items-center gap-4">
-                        <h1 className="font-display text-3xl font-bold text-dark">Order {order.id}</h1>
+                        <h1 className="font-display text-3xl font-bold text-dark">Order {order.orderNumber}</h1>
                         <Badge variant="secondary" className="px-3 py-1 font-bold">{order.status}</Badge>
                     </div>
                     <p className="text-dark/60 text-sm">Placed on {new Date(order.createdAt).toLocaleString()}</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" className="rounded-xl gap-2 border-red-200 text-red-500 hover:bg-red-50">
+                    <Button
+                        variant="outline"
+                        className="rounded-xl gap-2 border-red-200 text-red-500 hover:bg-red-50"
+                        onClick={() => void updateOrder({ status: "Cancelled" })}
+                        disabled={statusUpdateLoading}
+                    >
                         <XCircle className="h-4 w-4" /> Cancel Order
                     </Button>
-                    <Button variant="primary" className="rounded-xl gap-2 shadow-lg shadow-accent/20">
+                    <Button
+                        variant="primary"
+                        className="rounded-xl gap-2 shadow-lg shadow-accent/20"
+                        onClick={() => void updateOrder({ status: "Confirmed", paymentStatus: "Paid" })}
+                        disabled={statusUpdateLoading}
+                    >
                         <CheckCircle2 className="h-4 w-4" /> Confirm Payment
                     </Button>
                 </div>
@@ -135,12 +190,23 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                         <div className="h-px bg-secondary/10" />
                         <div className="flex flex-col gap-3">
                             <p className="text-xs font-bold text-dark/40 uppercase tracking-widest">Update Status</p>
-                            <select className="h-10 rounded-xl bg-secondary/5 border-none text-sm font-medium focus:ring-1 focus:ring-accent outline-none">
-                                <option>Mark as Confirmed</option>
-                                <option>Mark as Shipped</option>
-                                <option>Mark as Delivered</option>
+                            <select
+                                value={nextStatus}
+                                onChange={(event) => setNextStatus(event.target.value as Order["status"])}
+                                className="h-10 rounded-xl bg-secondary/5 border-none text-sm font-medium focus:ring-1 focus:ring-accent outline-none"
+                            >
+                                <option value="Confirmed">Mark as Confirmed</option>
+                                <option value="Shipped">Mark as Shipped</option>
+                                <option value="Delivered">Mark as Delivered</option>
                             </select>
-                            <Button variant="primary" className="rounded-xl h-10 text-xs shadow-md">Update Status</Button>
+                            <Button
+                                variant="primary"
+                                className="rounded-xl h-10 text-xs shadow-md"
+                                onClick={() => void updateOrder({ status: nextStatus })}
+                                disabled={statusUpdateLoading}
+                            >
+                                {statusUpdateLoading ? "Updating..." : "Update Status"}
+                            </Button>
                         </div>
                     </div>
 

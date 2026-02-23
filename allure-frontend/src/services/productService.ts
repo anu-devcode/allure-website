@@ -1,40 +1,66 @@
-import { MOCK_PRODUCTS } from "@/data/mock-products";
+import axios from "axios";
 import { Product } from "@/types";
 
-/**
- * Product Service
- * Currently using mock data, but designed to be easily switched to API calls.
- */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+type ApiAvailability = "IN_STORE" | "PRE_ORDER" | "SOLD_OUT";
+
+type ApiProduct = {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    price: number;
+    availability: ApiAvailability;
+    origin: string | null;
+    images: string[];
+    category: {
+        id: string;
+        name: string;
+        slug: string;
+    };
+};
+
+const availabilityMap: Record<ApiAvailability, Product["availability"]> = {
+    IN_STORE: "In-Store",
+    PRE_ORDER: "Pre-Order",
+    SOLD_OUT: "Sold Out",
+};
+
+const mapApiProduct = (product: ApiProduct): Product => ({
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    price: product.price,
+    image: product.images[0] ?? "",
+    gallery: product.images,
+    category: product.category.name,
+    availability: availabilityMap[product.availability],
+    origin: product.origin ?? undefined,
+    description: product.description ?? "",
+    variants: [],
+});
+
 export const productService = {
-    /**
-     * Get all products
-     */
     async getProducts(): Promise<Product[]> {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return MOCK_PRODUCTS;
+        const response = await axios.get<ApiProduct[]>(`${API_BASE_URL}/products`);
+        return response.data.map(mapApiProduct);
     },
 
-    /**
-     * Get a single product by ID
-     */
     async getProductById(id: string): Promise<Product | undefined> {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        return MOCK_PRODUCTS.find((p) => p.id === id);
+        try {
+            const response = await axios.get<ApiProduct>(`${API_BASE_URL}/products/${id}`);
+            return mapApiProduct(response.data);
+        } catch {
+            return undefined;
+        }
     },
 
-    /**
-     * Get products by category
-     */
     async getProductsByCategory(category: string): Promise<Product[]> {
         const products = await this.getProducts();
         return products.filter((p) => p.category === category);
     },
 
-    /**
-     * Search products
-     */
     async searchProducts(query: string): Promise<Product[]> {
         const products = await this.getProducts();
         const searchLower = query.toLowerCase();

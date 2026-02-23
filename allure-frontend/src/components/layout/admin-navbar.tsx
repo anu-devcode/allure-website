@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
 import { Menu, User, LogOut } from "lucide-react";
 import { useAdminAuth } from "@/store/useAdminAuth";
 import { useRouter } from "next/navigation";
@@ -51,7 +50,7 @@ export function AdminNavbar({ onMenuClick }: { onMenuClick?: () => void }) {
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/5 text-dark/40">
                             <User className="h-4 w-4" />
                         </div>
-                        <span className="text-xs font-bold text-dark">{admin?.username}</span>
+                        <span className="text-xs font-bold text-dark">{admin?.name || admin?.email}</span>
                     </div>
                     <Button
                         variant="ghost"

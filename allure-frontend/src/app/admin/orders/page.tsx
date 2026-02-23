@@ -1,13 +1,54 @@
 "use client";
 
-import { MOCK_ORDERS } from "@/data/mock-orders";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, Eye, Filter } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Order } from "@/types";
+import { adminOrderService } from "@/services/adminOrderService";
+import { useAdminAuth } from "@/store/useAdminAuth";
 
 export default function AdminOrdersPage() {
+    const token = useAdminAuth((s) => s.token);
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [query, setQuery] = useState("");
+
+    useEffect(() => {
+        const loadOrders = async () => {
+            if (!token) {
+                setOrders([]);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const result = await adminOrderService.getOrders(token);
+                setOrders(result);
+            } catch {
+                setOrders([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void loadOrders();
+    }, [token]);
+
+    const filteredOrders = useMemo(() => {
+        const normalizedQuery = query.trim().toLowerCase();
+        if (!normalizedQuery) {
+            return orders;
+        }
+
+        return orders.filter((order) =>
+            order.orderNumber.toLowerCase().includes(normalizedQuery) ||
+            order.customerName.toLowerCase().includes(normalizedQuery)
+        );
+    }, [orders, query]);
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case "New": return "bg-blue-100 text-blue-700";
@@ -34,6 +75,8 @@ export default function AdminOrdersPage() {
                         <input
                             type="text"
                             placeholder="Search by ID or customer..."
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
                             className="w-full rounded-xl border border-secondary/10 bg-secondary/5 py-2 pl-10 pr-4 text-sm focus:bg-white focus:outline-none focus:ring-1 focus:ring-accent transition-all"
                         />
                     </div>
@@ -64,9 +107,17 @@ export default function AdminOrdersPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-secondary/10">
-                        {MOCK_ORDERS.map((order) => (
+                        {loading ? (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-8 text-center text-sm text-dark/40">Loading orders...</td>
+                            </tr>
+                        ) : filteredOrders.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-8 text-center text-sm text-dark/40">No orders found.</td>
+                            </tr>
+                        ) : filteredOrders.map((order) => (
                             <tr key={order.id} className="hover:bg-secondary/5 transition-colors group">
-                                <td className="px-6 py-4 font-bold text-dark text-sm">{order.id}</td>
+                                <td className="px-6 py-4 font-bold text-dark text-sm">{order.orderNumber}</td>
                                 <td className="px-6 py-4">
                                     <div className="flex flex-col">
                                         <span className="font-bold text-dark text-sm">{order.customerName}</span>

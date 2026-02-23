@@ -7,7 +7,7 @@ import { Shield, Lock, AlertCircle, CheckCircle2, ChevronRight, LayoutDashboard 
 import { cn } from "@/lib/utils";
 
 export default function AdminLoginPage() {
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
         // Artifical delay for security feel
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        const ok = await login(username, password);
+        const ok = await login(email, password);
 
         if (ok) {
             setSuccess(true);
@@ -74,17 +74,17 @@ export default function AdminLoginPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Username</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email</label>
                             <div className="relative group">
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors">
                                     <LayoutDashboard className="h-5 w-5" />
                                 </div>
                                 <input
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     className="w-full bg-slate-950 border-2 border-slate-800 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-slate-700 focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all"
-                                    placeholder="Enter ID"
+                                    placeholder="admin@example.com"
                                     required
                                 />
                             </div>

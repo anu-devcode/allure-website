@@ -10,15 +10,29 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   password  String
+  phone     String?  @unique
+  city      String?
   name      String?
   role      Role     @default(ADMIN)
+  failedLoginAttempts Int @default(0)
+  lockoutUntil DateTime?
+  orders    Order[]
+  wishlist  Wishlist?
+  refreshTokens RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 enum Role {
+  CUSTOMER
   ADMIN
   STAFF
+}
+
+enum AuthDomain {
+  CUSTOMER
+  ADMIN
 }
 
 model Category {
@@ -44,6 +58,7 @@ model Product {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   OrderItems   OrderItem[]
+  WishlistItems WishlistItem[]
 }
 
 enum Availability {
@@ -55,6 +70,8 @@ enum Availability {
 model Order {
   id            String      @id @default(uuid())
   orderNumber   String      @unique // e.g., ORD-1001
+  customer      User?       @relation(fields: [customerId], references: [id])
+  customerId    String?
   customerName  String
   customerPhone String
   city          String      @default("Addis Ababa")
@@ -86,6 +103,9 @@ model OrderItem {
   orderId   String
   product   Product @relation(fields: [productId], references: [id])
   productId String
+  productName String
+  productImage String?
+  variantSelection Json?
   quantity  Int
   price     Float   // Price at time of purchase
 }
@@ -107,6 +127,54 @@ model CustomRequest {
   adminNotes    String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+}
+
+model Wishlist {
+  id         String         @id @default(uuid())
+  guestId    String?        @unique
+  customer   User?          @relation(fields: [customerId], references: [id])
+  customerId String?        @unique
+  items      WishlistItem[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model WishlistItem {
+  id         String   @id @default(uuid())
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  wishlistId String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  createdAt  DateTime @default(now())
+
+  @@unique([wishlistId, productId])
+}
+
+model RefreshToken {
+  id          String     @id @default(uuid())
+  tokenHash   String     @unique
+  domain      AuthDomain
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime   @default(now())
+
+  @@index([userId, domain])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id          String   @id @default(uuid())
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 enum RequestStatus {

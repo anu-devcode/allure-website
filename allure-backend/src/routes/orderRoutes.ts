@@ -1,15 +1,17 @@
 import { Router } from 'express';
 import {
     createOrder,
+    getCustomerOrders,
     getOrders,
     getOrderById,
     updateOrderStatus
 } from '../controllers/orderController.js';
-import { authenticate, authorizeAdmin } from '../middleware/authMiddleware.js';
+import { authenticate, authenticateOptional, authorizeAdmin, authorizeCustomer, authorizeDomain } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
-router.post('/', createOrder); // Public endpoint
+router.post('/', authenticateOptional, createOrder); // Guest + authenticated customer
+router.get('/my', authenticate, authorizeDomain('customer'), authorizeCustomer, getCustomerOrders);
 router.get('/', authenticate, authorizeAdmin, getOrders);
 router.get('/:id', authenticate, authorizeAdmin, getOrderById);
 router.patch('/:id/status', authenticate, authorizeAdmin, updateOrderStatus);

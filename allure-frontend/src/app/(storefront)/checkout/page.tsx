@@ -5,10 +5,15 @@ import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ChevronLeft, CreditCard, Banknote, Smartphone, Package, ArrowRight, MapPin, Phone, User } from "lucide-react";
 import Link from "next/link";
+import { orderService } from "@/services/orderService";
+import { useCustomerAuth } from "@/store/useCustomerAuth";
 
 export default function CheckoutPage() {
     const { items, getTotalPrice, clearCart } = useCartStore();
+    const token = useCustomerAuth((s) => s.token);
     const [step, setStep] = useState(1); // 1: Info, 2: Payment, 3: Success
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [submittingOrder, setSubmittingOrder] = useState(false);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -16,7 +21,7 @@ export default function CheckoutPage() {
         city: "Addis Ababa",
     });
 
-    const [orderId] = useState(() => `ALR-${Math.floor(Math.random() * 90000) + 10000}`);
+    const [orderId, setOrderId] = useState("");
 
     const steps = [
         { id: 1, label: "Information", icon: User },
@@ -80,14 +85,39 @@ export default function CheckoutPage() {
 
     const handleNext = (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitError(null);
         setStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleConfirm = () => {
-        setStep(3);
-        clearCart();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    const handleConfirm = async () => {
+        setSubmittingOrder(true);
+        setSubmitError(null);
+
+        try {
+            const order = await orderService.createOrder(
+                {
+                    customerName: formData.name,
+                    phone: formData.phone,
+                    city: formData.city,
+                    items: items.map((item) => ({
+                        productId: item.id,
+                        quantity: item.quantity,
+                        variantSelection: item.selectedOptions,
+                    })),
+                },
+                token
+            );
+
+            setOrderId(order.orderNumber);
+            setStep(3);
+            clearCart();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch {
+            setSubmitError("Could not submit your order. Please try again.");
+        } finally {
+            setSubmittingOrder(false);
+        }
     };
 
     if (step === 3) {
@@ -149,6 +179,12 @@ export default function CheckoutPage() {
                 <p className="text-dark/60 mb-10">Choose your preferred bank and follow the steps.</p>
 
                 <div className="flex flex-col gap-8 animate-slide-up-fade">
+                    {submitError && (
+                        <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600">
+                            {submitError}
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 gap-6">
                         <div className="group flex items-center gap-5 p-6 rounded-[2rem] border-2 border-primary/20 bg-white hover:border-accent transition-all cursor-pointer shadow-sm hover:shadow-md">
                             <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-accent group-hover:bg-primary group-hover:text-white transition-colors">
@@ -189,8 +225,8 @@ export default function CheckoutPage() {
                                 <p className="text-sm text-dark/70 font-bold">Your order ID is generated on the next screen.</p>
                             </div>
                         </div>
-                        <Button onClick={handleConfirm} variant="primary" size="lg" className="w-full h-16 rounded-2xl font-bold gap-3 mt-4">
-                            Submit Order <ArrowRight className="h-5 w-5" />
+                        <Button onClick={handleConfirm} variant="primary" size="lg" className="w-full h-16 rounded-2xl font-bold gap-3 mt-4" disabled={submittingOrder}>
+                            {submittingOrder ? "Submitting..." : <>Submit Order <ArrowRight className="h-5 w-5" /></>}
                         </Button>
                     </div>
                 </div>
