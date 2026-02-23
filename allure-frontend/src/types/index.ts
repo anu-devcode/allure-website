@@ -5,23 +5,37 @@ export interface ProductVariant {
     options: string[]; // e.g. ["S", "M", "L"], ["Sage", "Olive"]
 }
 
+export type ProductDetails = {
+    [key: string]: string | number | boolean | string[] | undefined | null;
+};
+
 export interface Product {
     id: string;
     name: string;
     slug: string;
     price: number;
+    salePrice?: number;
+    compareAtPrice?: number;
+    sku?: string;
+    stockQuantity?: number;
+    isBulkAvailable?: boolean;
+    bulkMinQty?: number;
+    bulkPrice?: number;
     image: string;
     gallery?: string[];
     category: string;
     availability: Availability;
     origin?: string; // e.g. "Shein", "Turkey"
+    badge?: string;
+    productType?: string;
+    details?: ProductDetails;
     estimatedArrival?: string; // e.g. "10-14 days"
     description: string;
     variants: ProductVariant[];
 }
 
 export type OrderStatus = "New" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
-export type PaymentStatus = "Pending" | "Paid";
+export type PaymentStatus = "Pending" | "Paid" | "Refunded";
 
 export interface OrderItem {
     id: string;

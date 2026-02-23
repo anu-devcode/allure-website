@@ -50,10 +50,20 @@ model Product {
   slug         String       @unique
   description  String?
   price        Float
+  salePrice    Float?
+  compareAtPrice Float?
+  sku          String?
+  stockQuantity Int        @default(0)
+  isBulkAvailable Boolean  @default(false)
+  bulkMinQty   Int?
+  bulkPrice    Float?
   category     Category     @relation(fields: [categoryId], references: [id])
   categoryId   String
   availability Availability @default(IN_STORE)
   origin       String?      // e.g., Turkey, Shein
+  badge        String?
+  productType  String?
+  details      Json?
   images       String[]     // Array of image URLs
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -129,6 +139,28 @@ model CustomRequest {
   updatedAt     DateTime      @updatedAt
 }
 
+model Review {
+  id            String   @id @default(uuid())
+  customerName  String
+  customerEmail String?
+  productName   String?
+  rating        Int
+  comment       String
+  isApproved    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ContactMessage {
+  id          String                @id @default(uuid())
+  name        String
+  contact     String
+  message     String
+  status      ContactMessageStatus  @default(NEW)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+}
+
 model Wishlist {
   id         String         @id @default(uuid())
   guestId    String?        @unique
@@ -182,4 +214,9 @@ enum RequestStatus {
   QUOTED
   CONVERTED
   REJECTED
+}
+
+enum ContactMessageStatus {
+  NEW
+  RESOLVED
 }

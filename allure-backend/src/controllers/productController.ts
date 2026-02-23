@@ -3,18 +3,48 @@ import prisma from '../services/prisma.js';
 
 export const createProduct = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { name, slug, description, price, categoryId, availability, origin, images } = req.body;
+        const {
+            name,
+            slug,
+            description,
+            price,
+            salePrice,
+            compareAtPrice,
+            sku,
+            stockQuantity,
+            isBulkAvailable,
+            bulkMinQty,
+            bulkPrice,
+            categoryId,
+            availability,
+            origin,
+            badge,
+            productType,
+            details,
+            images,
+        } = req.body;
         const product = await prisma.product.create({
             data: {
                 name,
                 slug,
                 description,
                 price,
+                salePrice,
+                compareAtPrice,
+                sku,
+                stockQuantity,
+                isBulkAvailable,
+                bulkMinQty,
+                bulkPrice,
                 categoryId,
                 availability,
                 origin,
+                badge,
+                productType,
+                details,
                 images,
             },
+            include: { category: true },
         });
         res.status(201).json(product);
     } catch (error) {
@@ -53,7 +83,26 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const { name, slug, description, price, categoryId, availability, origin, images } = req.body;
+        const {
+            name,
+            slug,
+            description,
+            price,
+            salePrice,
+            compareAtPrice,
+            sku,
+            stockQuantity,
+            isBulkAvailable,
+            bulkMinQty,
+            bulkPrice,
+            categoryId,
+            availability,
+            origin,
+            badge,
+            productType,
+            details,
+            images,
+        } = req.body;
         const product = await prisma.product.update({
             where: { id: id as string },
             data: {
@@ -61,11 +110,22 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
                 slug,
                 description,
                 price,
+                salePrice,
+                compareAtPrice,
+                sku,
+                stockQuantity,
+                isBulkAvailable,
+                bulkMinQty,
+                bulkPrice,
                 categoryId,
                 availability,
                 origin,
+                badge,
+                productType,
+                details,
                 images,
             },
+            include: { category: true },
         });
         res.json(product);
     } catch (error) {

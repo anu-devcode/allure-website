@@ -58,6 +58,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     const addItem = useCartStore((state) => state.addItem);
     const token = useCustomerAuth((state) => state.token);
     const toggleWishlist = useWishlistStore((state) => state.toggleItem);
+    const isWishlisted = useWishlistStore((state) => (product ? state.isWishlisted(product.id) : false));
 
     useEffect(() => {
         async function fetchProduct() {
@@ -111,7 +112,6 @@ export default function ProductPage({ params }: ProductPageProps) {
     };
 
     const currentImage = galleryImages[selectedImageIndex] || product.image;
-    const isWishlisted = useWishlistStore((state) => state.isWishlisted(product.id));
 
     return (
         <div className="animate-page-fade-in">

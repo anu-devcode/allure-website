@@ -45,7 +45,12 @@ export const getCustomRequests = async (token: string): Promise<CustomRequest[]>
     }
 };
 
-export const updateCustomRequestStatus = async (id: string, status: string, adminNotes: string, token: string) => {
+export const updateCustomRequestStatus = async (
+    id: string,
+    status: CustomRequest["status"],
+    adminNotes: string,
+    token: string
+): Promise<CustomRequest> => {
     try {
         const response = await axios.patch(`${API_BAR_URL}/custom-requests/${id}/status`,
             { status, adminNotes },

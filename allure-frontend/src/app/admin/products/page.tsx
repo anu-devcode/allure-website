@@ -143,7 +143,13 @@ export default function AdminProductsPage() {
                             <tr key={product.id} className="hover:bg-secondary/5 transition-colors group">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="h-12 w-10 rounded-lg bg-secondary/10 flex items-center justify-center text-xl">👗</div>
+                                        <div className="h-12 w-10 overflow-hidden rounded-lg bg-secondary/10 flex items-center justify-center text-xs text-dark/40">
+                                            {product.image ? (
+                                                <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <span>No image</span>
+                                            )}
+                                        </div>
                                         <div>
                                             <p className="font-bold text-dark text-sm">{product.name}</p>
                                             <p className="text-xs text-dark/40">ID: {product.id}</p>
@@ -158,7 +164,7 @@ export default function AdminProductsPage() {
                                     </Badge>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                         <Link href={`/product/${product.id}`} target="_blank">
                                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-dark/40 hover:text-accent">
                                                 <ExternalLink className="h-4 w-4" />

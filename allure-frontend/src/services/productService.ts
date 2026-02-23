@@ -11,8 +11,18 @@ type ApiProduct = {
     slug: string;
     description: string | null;
     price: number;
+    salePrice?: number | null;
+    compareAtPrice?: number | null;
+    sku?: string | null;
+    stockQuantity?: number | null;
+    isBulkAvailable?: boolean | null;
+    bulkMinQty?: number | null;
+    bulkPrice?: number | null;
     availability: ApiAvailability;
     origin: string | null;
+    badge?: string | null;
+    productType?: string | null;
+    details?: Record<string, unknown> | null;
     images: string[];
     category: {
         id: string;
@@ -32,11 +42,21 @@ const mapApiProduct = (product: ApiProduct): Product => ({
     name: product.name,
     slug: product.slug,
     price: product.price,
+    salePrice: product.salePrice ?? undefined,
+    compareAtPrice: product.compareAtPrice ?? undefined,
+    sku: product.sku ?? undefined,
+    stockQuantity: product.stockQuantity ?? undefined,
+    isBulkAvailable: product.isBulkAvailable ?? undefined,
+    bulkMinQty: product.bulkMinQty ?? undefined,
+    bulkPrice: product.bulkPrice ?? undefined,
     image: product.images[0] ?? "",
     gallery: product.images,
     category: product.category.name,
     availability: availabilityMap[product.availability],
     origin: product.origin ?? undefined,
+    badge: product.badge ?? undefined,
+    productType: product.productType ?? undefined,
+    details: (product.details ?? undefined) as Product["details"],
     description: product.description ?? "",
     variants: [],
 });

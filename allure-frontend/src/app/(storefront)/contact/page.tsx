@@ -3,14 +3,34 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MessageSquare, MapPin, Send, User, Clock, CheckCircle2, Sparkles } from "lucide-react";
+import { adminContactService } from "@/services/adminContactService";
 
 export default function ContactPage() {
     const [sent, setSent] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [name, setName] = useState("");
+    const [contact, setContact] = useState("");
+    const [message, setMessage] = useState("");
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSent(true);
-        setTimeout(() => setSent(false), 3000);
+        setLoading(true);
+
+        try {
+            await adminContactService.submitMessage({
+                name,
+                contact,
+                message,
+            });
+
+            setSent(true);
+            setName("");
+            setContact("");
+            setMessage("");
+            setTimeout(() => setSent(false), 3000);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -120,6 +140,8 @@ export default function ContactPage() {
                                         <input
                                             required
                                             type="text"
+                                            value={name}
+                                            onChange={(event) => setName(event.target.value)}
                                             placeholder="e.g. Abebe Kebede"
                                             className="h-14 w-full rounded-2xl border-2 border-secondary/10 bg-white pl-14 pr-6 text-sm text-dark focus:border-accent focus:outline-none transition-all shadow-sm"
                                         />
@@ -135,6 +157,8 @@ export default function ContactPage() {
                                         <input
                                             required
                                             type="text"
+                                            value={contact}
+                                            onChange={(event) => setContact(event.target.value)}
                                             placeholder="e.g. 0911 223 344"
                                             className="h-14 w-full rounded-2xl border-2 border-secondary/10 bg-white pl-14 pr-6 text-sm text-dark focus:border-accent focus:outline-none transition-all shadow-sm"
                                         />
@@ -146,6 +170,8 @@ export default function ContactPage() {
                                     <textarea
                                         required
                                         rows={4}
+                                        value={message}
+                                        onChange={(event) => setMessage(event.target.value)}
                                         placeholder="How can we help you?"
                                         className="rounded-2xl border-2 border-secondary/10 bg-white p-5 text-sm text-dark focus:border-accent focus:outline-none transition-all shadow-sm resize-none"
                                     />
@@ -155,9 +181,14 @@ export default function ContactPage() {
                                     variant="primary"
                                     size="lg"
                                     className="h-14 rounded-2xl gap-3 text-base font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] mt-2"
-                                    disabled={sent}
+                                    disabled={sent || loading}
                                 >
-                                    {sent ? (
+                                    {loading ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                                            <span>Sending...</span>
+                                        </div>
+                                    ) : sent ? (
                                         <div className="flex items-center gap-2">
                                             <CheckCircle2 className="h-5 w-5" />
                                             <span>Message Sent!</span>

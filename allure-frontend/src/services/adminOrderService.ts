@@ -39,7 +39,7 @@ const statusMap: Record<ApiOrder["status"], Order["status"]> = {
 const paymentStatusMap: Record<ApiOrder["paymentStatus"], Order["paymentStatus"]> = {
     PENDING: "Pending",
     PAID: "Paid",
-    REFUNDED: "Paid",
+    REFUNDED: "Refunded",
 };
 
 const mapApiOrder = (order: ApiOrder): Order => ({
@@ -52,7 +52,7 @@ const mapApiOrder = (order: ApiOrder): Order => ({
     status: statusMap[order.status],
     paymentStatus: paymentStatusMap[order.paymentStatus],
     createdAt: order.createdAt,
-    items: order.items.map((item) => ({
+    items: (order.items ?? []).map((item) => ({
         id: item.id,
         productId: item.productId,
         name: item.productName ?? item.product?.name ?? "Product",
@@ -94,6 +94,7 @@ export const adminOrderService = {
         const paymentReverseMap: Record<Order["paymentStatus"], ApiOrder["paymentStatus"]> = {
             Pending: "PENDING",
             Paid: "PAID",
+            Refunded: "REFUNDED",
         };
 
         const response = await axios.patch<ApiOrder>(
