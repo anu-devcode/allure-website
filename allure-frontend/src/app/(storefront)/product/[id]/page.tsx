@@ -1,14 +1,15 @@
 "use client";
 
-import { use, useEffect, useState, useCallback } from "react";
+import { use, useEffect, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { productService } from "@/services/productService";
-import { Product } from "@/types";
+import { Product, Review } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/useCartStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { useCustomerAuth } from "@/store/useCustomerAuth";
+import { reviewService } from "@/services/reviewService";
 import {
     ShoppingBag, Truck, Info, Check, ChevronLeft, Star, Heart, Share2,
     Package, RotateCcw, Shield, MessageSquare
@@ -31,19 +32,13 @@ const TAB_LABELS: Record<TabKey, string> = {
     shipping: "Shipping & Returns",
 };
 
-// Mock data for tabs
+// Static data for specs fallback
 const MOCK_SPECS = [
     { label: "Material", value: "Premium Fabric" },
     { label: "Care", value: "Machine Wash Cold, Hang Dry" },
     { label: "Fit", value: "Regular / True to Size" },
     { label: "Season", value: "All Season" },
     { label: "Imported", value: "Yes" },
-];
-
-const MOCK_REVIEWS = [
-    { name: "Meron K.", rating: 5, date: "2 weeks ago", text: "Absolutely love it! The quality is amazing and it fits perfectly. Highly recommended." },
-    { name: "Sara T.", rating: 4, date: "1 month ago", text: "Great product, fast delivery. The color is slightly different from the photo but still beautiful." },
-    { name: "Dagim A.", rating: 5, date: "1 month ago", text: "Best purchase I've made. Will definitely order again from Allure." },
 ];
 
 export default function ProductPage({ params }: ProductPageProps) {
@@ -55,8 +50,17 @@ export default function ProductPage({ params }: ProductPageProps) {
     const [activeTab, setActiveTab] = useState<TabKey>("description");
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [imageTransitioning, setImageTransitioning] = useState(false);
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [reviewsLoading, setReviewsLoading] = useState(true);
+    const [reviewSummary, setReviewSummary] = useState({ averageRating: 0, reviewCount: 0 });
+    const [reviewEligibility, setReviewEligibility] = useState<{ canReview: boolean; hasReviewed: boolean; availableOrders: Array<{ id: string; orderNumber: string; createdAt: string }>; latestReview: Review | null } | null>(null);
+    const [reviewForm, setReviewForm] = useState({ orderId: "", rating: 5, comment: "" });
+    const [reviewSubmitting, setReviewSubmitting] = useState(false);
+    const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+    const [reviewError, setReviewError] = useState<string | null>(null);
     const addItem = useCartStore((state) => state.addItem);
     const token = useCustomerAuth((state) => state.token);
+    const isAuthenticated = useCustomerAuth((state) => state.isAuthenticated);
     const toggleWishlist = useWishlistStore((state) => state.toggleItem);
     const isWishlisted = useWishlistStore((state) => (product ? state.isWishlisted(product.id) : false));
 
@@ -76,6 +80,93 @@ export default function ProductPage({ params }: ProductPageProps) {
         }
         fetchProduct();
     }, [id]);
+
+    useEffect(() => {
+        const fetchReviews = async () => {
+            setReviewsLoading(true);
+            try {
+                const data = await reviewService.getProductReviews(id);
+                setReviews(data.reviews);
+                setReviewSummary({
+                    averageRating: data.summary.averageRating ?? 0,
+                    reviewCount: data.summary.reviewCount,
+                });
+            } catch {
+                setReviews([]);
+                setReviewSummary({ averageRating: 0, reviewCount: 0 });
+            } finally {
+                setReviewsLoading(false);
+            }
+        };
+
+        void fetchReviews();
+    }, [id]);
+
+    useEffect(() => {
+        const fetchEligibility = async () => {
+            if (!token) {
+                setReviewEligibility(null);
+                return;
+            }
+
+            try {
+                const data = await reviewService.getReviewEligibility(id, token);
+                setReviewEligibility(data);
+                setReviewForm((current) => ({
+                    ...current,
+                    orderId: current.orderId || data.availableOrders[0]?.id || "",
+                }));
+            } catch {
+                setReviewEligibility(null);
+            }
+        };
+
+        void fetchEligibility();
+    }, [id, token]);
+
+    const handleSubmitReview = async () => {
+        if (!token || !reviewEligibility?.canReview || !reviewForm.orderId || !reviewForm.comment.trim()) {
+            setReviewError("Select an eligible order and write a review comment.");
+            return;
+        }
+
+        try {
+            setReviewSubmitting(true);
+            setReviewError(null);
+            setReviewMessage(null);
+            await reviewService.submitReview(token, {
+                productId: id,
+                orderId: reviewForm.orderId,
+                rating: reviewForm.rating,
+                comment: reviewForm.comment.trim(),
+            });
+            const [reviewData, eligibilityData] = await Promise.all([
+                reviewService.getProductReviews(id),
+                reviewService.getReviewEligibility(id, token),
+            ]);
+            setReviews(reviewData.reviews);
+            setReviewSummary({
+                averageRating: reviewData.summary.averageRating ?? 0,
+                reviewCount: reviewData.summary.reviewCount,
+            });
+            setReviewEligibility(eligibilityData);
+            setReviewForm({ orderId: eligibilityData.availableOrders[0]?.id || "", rating: 5, comment: "" });
+            setReviewMessage("Review submitted successfully. It will appear after approval.");
+        } catch {
+            setReviewError("Could not submit your review right now.");
+        } finally {
+            setReviewSubmitting(false);
+        }
+    };
+
+    const displayRating = useMemo(() => {
+        if (product?.averageRating) {
+            return product.averageRating;
+        }
+        return reviewSummary.averageRating || 0;
+    }, [product?.averageRating, reviewSummary.averageRating]);
+
+    const displayReviewCount = product?.reviewCount ?? reviewSummary.reviewCount;
 
     // Build gallery from existing data — no refetch
     const galleryImages = product
@@ -185,8 +276,8 @@ export default function ProductPage({ params }: ProductPageProps) {
                                 <p className="font-display text-2xl font-bold text-accent md:text-3xl">{product.price.toLocaleString()} ETB</p>
                                 <div className="flex items-center gap-1.5 rounded-full bg-yellow-400/10 px-3 py-1 text-yellow-600">
                                     <Star className="h-4 w-4 fill-current" />
-                                    <span className="text-sm font-bold">4.8</span>
-                                    <span className="text-xs font-medium text-dark/40 ml-1">(24 reviews)</span>
+                                    <span className="text-sm font-bold">{displayReviewCount ? displayRating.toFixed(1) : "—"}</span>
+                                    <span className="text-xs font-medium text-dark/40 ml-1">({displayReviewCount} review{displayReviewCount === 1 ? "" : "s"})</span>
                                 </div>
                             </div>
                         </div>
@@ -351,21 +442,86 @@ export default function ProductPage({ params }: ProductPageProps) {
                                     <h3 className="font-display text-xl font-bold text-dark">Customer Reviews</h3>
                                     <div className="flex items-center gap-2 text-yellow-500">
                                         <Star className="h-5 w-5 fill-current" />
-                                        <span className="font-bold text-dark">4.8</span>
-                                        <span className="text-sm text-dark/40">(24 reviews)</span>
+                                        <span className="font-bold text-dark">{displayReviewCount ? displayRating.toFixed(1) : "—"}</span>
+                                        <span className="text-sm text-dark/40">({displayReviewCount} review{displayReviewCount === 1 ? "" : "s"})</span>
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-5">
-                                    {MOCK_REVIEWS.map((review, i) => (
-                                        <div key={i} className="p-5 rounded-2xl bg-secondary/5 border border-secondary/10">
+                                    {isAuthenticated && reviewEligibility?.canReview && (
+                                        <div className="rounded-2xl border border-primary/10 bg-primary/5 p-5">
+                                            <h4 className="font-display text-lg font-bold text-dark">Write a verified review</h4>
+                                            <p className="mt-1 text-sm text-dark/55">You can review this item because it was delivered in one of your orders.</p>
+                                            <div className="mt-4 grid gap-4 md:grid-cols-[220px_1fr]">
+                                                <select
+                                                    value={reviewForm.orderId}
+                                                    onChange={(event) => setReviewForm((current) => ({ ...current, orderId: event.target.value }))}
+                                                    className="h-11 rounded-xl border border-secondary/20 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-accent/20"
+                                                >
+                                                    {reviewEligibility.availableOrders.map((order) => (
+                                                        <option key={order.id} value={order.id}>{order.orderNumber}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    {[1, 2, 3, 4, 5].map((rating) => (
+                                                        <button
+                                                            key={rating}
+                                                            type="button"
+                                                            onClick={() => setReviewForm((current) => ({ ...current, rating }))}
+                                                            className="rounded-full p-1"
+                                                        >
+                                                            <Star className={`h-5 w-5 ${rating <= reviewForm.rating ? "fill-yellow-400 text-yellow-400" : "text-secondary/20"}`} />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <textarea
+                                                value={reviewForm.comment}
+                                                onChange={(event) => setReviewForm((current) => ({ ...current, comment: event.target.value }))}
+                                                placeholder="Share your experience with this product"
+                                                className="mt-4 min-h-[120px] w-full rounded-2xl border border-secondary/20 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-accent/20"
+                                            />
+                                            {(reviewError || reviewMessage) && (
+                                                <div className={`mt-4 rounded-xl px-4 py-3 text-sm ${reviewError ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}>
+                                                    {reviewError ?? reviewMessage}
+                                                </div>
+                                            )}
+                                            <div className="mt-4 flex justify-end">
+                                                <Button className="rounded-xl" onClick={handleSubmitReview} disabled={reviewSubmitting}>
+                                                    {reviewSubmitting ? "Submitting..." : "Submit Review"}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {isAuthenticated && !reviewEligibility?.canReview && reviewEligibility?.hasReviewed && reviewEligibility.latestReview && (
+                                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-sm text-emerald-700">
+                                            You already reviewed this product{reviewEligibility.latestReview.isApproved ? "." : "; it is currently pending approval."}
+                                        </div>
+                                    )}
+
+                                    {!isAuthenticated && (
+                                        <div className="rounded-2xl border border-secondary/10 bg-secondary/5 p-5 text-sm text-dark/60">
+                                            <Link href="/auth" className="font-bold text-accent hover:underline">Sign in</Link> after your delivered order to leave a verified review.
+                                        </div>
+                                    )}
+
+                                    {reviewsLoading ? (
+                                        <div className="rounded-2xl border border-secondary/10 bg-secondary/5 p-6 text-sm text-dark/40">Loading reviews...</div>
+                                    ) : reviews.length === 0 ? (
+                                        <div className="rounded-2xl border border-secondary/10 bg-secondary/5 p-6 text-sm text-dark/40">No approved reviews yet for this product.</div>
+                                    ) : reviews.map((review) => (
+                                        <div key={review.id} className="p-5 rounded-2xl bg-secondary/5 border border-secondary/10">
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="h-9 w-9 rounded-full bg-accent/10 flex items-center justify-center">
-                                                        <span className="text-xs font-bold text-accent">{review.name.charAt(0)}</span>
+                                                        <span className="text-xs font-bold text-accent">{review.customerName.charAt(0)}</span>
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-bold text-dark">{review.name}</p>
-                                                        <p className="text-xs text-dark/40">{review.date}</p>
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <p className="text-sm font-bold text-dark">{review.customerName}</p>
+                                                            {review.isVerifiedPurchase && <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">Verified Purchase</span>}
+                                                        </div>
+                                                        <p className="text-xs text-dark/40">{new Date(review.createdAt).toLocaleDateString()}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-0.5">
@@ -374,7 +530,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                                                     ))}
                                                 </div>
                                             </div>
-                                            <p className="text-sm text-dark/60 leading-relaxed">{review.text}</p>
+                                            <p className="text-sm text-dark/60 leading-relaxed">{review.comment}</p>
                                         </div>
                                     ))}
                                 </div>

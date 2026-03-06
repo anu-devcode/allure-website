@@ -24,6 +24,8 @@ type ApiProduct = {
     productType?: string | null;
     details?: Record<string, unknown> | null;
     images: string[];
+    reviewCount?: number;
+    averageRating?: number | null;
     category: {
         id: string;
         name: string;
@@ -57,6 +59,8 @@ const mapApiProduct = (product: ApiProduct): Product => ({
     badge: product.badge ?? undefined,
     productType: product.productType ?? undefined,
     details: (product.details ?? undefined) as Product["details"],
+    reviewCount: product.reviewCount ?? 0,
+    averageRating: product.averageRating ?? null,
     description: product.description ?? "",
     variants: [],
 });

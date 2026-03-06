@@ -78,8 +78,8 @@ export default function CustomerAuthPage() {
                         </h1>
                         <p className="max-w-md text-sm text-dark/50 md:text-base">
                             {mode === "login"
-                                ? "Sign in to track your orders and manage your account."
-                                : "Join Allure to start shopping and track your orders."}
+                                ? "Sign in to track your orders and manage your account. Guest orders placed with your phone number will sync automatically."
+                                : "Join Allure to start shopping and track your orders. If you already ordered as a guest, use the same phone number to sync them automatically."}
                         </p>
                     </div>
                 </div>

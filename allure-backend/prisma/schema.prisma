@@ -17,6 +17,7 @@ model User {
   failedLoginAttempts Int @default(0)
   lockoutUntil DateTime?
   orders    Order[]
+  reviews   Review[]
   wishlist  Wishlist?
   refreshTokens RefreshToken[]
   passwordResetTokens PasswordResetToken[]
@@ -65,6 +66,7 @@ model Product {
   productType  String?
   details      Json?
   images       String[]     // Array of image URLs
+  reviews      Review[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   OrderItems   OrderItem[]
@@ -88,7 +90,10 @@ model Order {
   total         Float
   status        OrderStatus @default(NEW)
   paymentStatus PaymentStatus @default(PENDING)
+  paymentReference String?
+  paymentProof  String?
   items         OrderItem[]
+  reviews       Review[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }
@@ -141,14 +146,26 @@ model CustomRequest {
 
 model Review {
   id            String   @id @default(uuid())
+  customer      User?    @relation(fields: [customerId], references: [id])
+  customerId    String?
   customerName  String
   customerEmail String?
+  product       Product? @relation(fields: [productId], references: [id])
+  productId     String?
   productName   String?
+  order         Order?   @relation(fields: [orderId], references: [id])
+  orderId       String?
   rating        Int
   comment       String
   isApproved    Boolean  @default(false)
+  isVerifiedPurchase Boolean @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([productId, isApproved])
+  @@index([customerId])
+  @@index([orderId])
+  @@unique([customerId, productId, orderId])
 }
 
 model ContactMessage {

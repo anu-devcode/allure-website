@@ -1,13 +1,35 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useCartStore } from "@/store/useCartStore";
 import { useCustomerAuth } from "@/store/useCustomerAuth";
+import { orderService } from "@/services/orderService";
 import { ShoppingBag, Package, Sparkles, ArrowRight, TrendingUp } from "lucide-react";
 
 export default function AccountDashboard() {
     const user = useCustomerAuth((s) => s.user);
+    const token = useCustomerAuth((s) => s.token);
     const cartItems = useCartStore((s) => s.items);
+    const [orderCount, setOrderCount] = useState<number | null>(null);
+
+    useEffect(() => {
+        const loadOrders = async () => {
+            if (!token) {
+                setOrderCount(0);
+                return;
+            }
+
+            try {
+                const orders = await orderService.getMyOrders(token);
+                setOrderCount(orders.length);
+            } catch {
+                setOrderCount(0);
+            }
+        };
+
+        void loadOrders();
+    }, [token]);
 
     if (!user) return null;
 
@@ -40,7 +62,7 @@ export default function AccountDashboard() {
                             <Package className="h-5 w-5 text-accent" />
                         </div>
                     </div>
-                    <p className="font-display text-2xl font-bold text-dark">0</p>
+                    <p className="font-display text-2xl font-bold text-dark">{orderCount ?? "—"}</p>
                     <p className="text-xs text-dark/40 mt-0.5">Total Orders</p>
                 </div>
 
@@ -82,6 +104,21 @@ export default function AccountDashboard() {
                             <div>
                                 <h3 className="font-display text-sm font-bold text-dark">Custom Order</h3>
                                 <p className="text-xs text-dark/40 mt-0.5">Request from SHEIN or local shops</p>
+                            </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-dark/20 group-hover:text-accent group-hover:translate-x-1 transition-all" />
+                    </div>
+                </Link>
+
+                <Link href="/account/orders" className="group rounded-2xl bg-white p-6 border border-secondary/10 shadow-sm hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-white transition-all duration-300">
+                                <Package className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <h3 className="font-display text-sm font-bold text-dark">Track My Orders</h3>
+                                <p className="text-xs text-dark/40 mt-0.5">View status and progress for your account orders</p>
                             </div>
                         </div>
                         <ArrowRight className="h-4 w-4 text-dark/20 group-hover:text-accent group-hover:translate-x-1 transition-all" />

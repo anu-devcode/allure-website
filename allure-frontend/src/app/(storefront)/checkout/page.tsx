@@ -145,6 +145,11 @@ export default function CheckoutPage() {
                             <p className="text-sm text-dark/70 leading-relaxed">
                                 To fully confirm your purchase, please complete the manual payment. Orders without payment screenshots are automatically cancelled after 2 hours.
                             </p>
+                            {!token && (
+                                <p className="text-sm text-dark/60 leading-relaxed">
+                                    You can track this order anytime with your <span className="font-bold text-dark">order number</span> and <span className="font-bold text-dark">phone number</span>. If you create an account later with the same phone, it will sync automatically.
+                                </p>
+                            )}
                         </div>
 
                         <div className="bg-accent p-8 rounded-[2rem] text-white shadow-xl shadow-accent/20">
@@ -156,11 +161,21 @@ export default function CheckoutPage() {
                             <p className="text-xs mt-2 opacity-70">(Telegram or WhatsApp)</p>
                         </div>
 
-                        <Link href="/" className="w-full">
-                            <Button variant="primary" size="lg" className="w-full h-16 rounded-2xl font-bold shadow-lg transition-all hover:scale-[1.02]">
-                                Return to Store
-                            </Button>
-                        </Link>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <Link
+                                href={token ? "/account/orders" : `/track-order?orderNumber=${encodeURIComponent(orderId)}&phone=${encodeURIComponent(formData.phone)}`}
+                                className="w-full"
+                            >
+                                <Button variant="secondary" size="lg" className="w-full h-16 rounded-2xl font-bold shadow-sm">
+                                    {token ? "View My Orders" : "Track This Order"}
+                                </Button>
+                            </Link>
+                            <Link href="/" className="w-full">
+                                <Button variant="primary" size="lg" className="w-full h-16 rounded-2xl font-bold shadow-lg transition-all hover:scale-[1.02]">
+                                    Return to Store
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

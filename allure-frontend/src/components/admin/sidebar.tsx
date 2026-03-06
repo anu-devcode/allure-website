@@ -24,14 +24,14 @@ import { useAdminAuth } from "@/store/useAdminAuth";
 
 const adminLinks = [
     { name: "Overview", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
+    { name: "Payments", href: "/admin/payments", icon: CreditCard },
+    { name: "Customers", href: "/admin/customers", icon: Users },
     { name: "Products", href: "/admin/products", icon: Package },
     { name: "Categories", href: "/admin/categories", icon: Tags },
     { name: "Reviews", href: "/admin/reviews", icon: Star },
-    { name: "Contact", href: "/admin/contact", icon: MessageSquare },
     { name: "Custom Requests", href: "/admin/custom-requests", icon: ClipboardList },
-    { name: "Customers", href: "/admin/customers", icon: Users },
-    { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
-    { name: "Payments", href: "/admin/payments", icon: CreditCard },
+    { name: "Contact", href: "/admin/contact", icon: MessageSquare },
     { name: "Content", href: "/admin/content", icon: Monitor },
     { name: "Settings", href: "/admin/settings", icon: Settings },
 ];

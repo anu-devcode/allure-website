@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Plus, Minus, Heart } from "lucide-react";
+import { Plus, Minus, Heart, Star } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { useCustomerAuth } from "@/store/useCustomerAuth";
@@ -94,10 +94,10 @@ export function ProductCard({ product }: ProductCardProps) {
             <CardContent className="p-5 flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
                     <p className="text-[10px] font-black text-accent/50 uppercase tracking-[0.2em]">{product.category}</p>
-                    <div className="flex gap-0.5">
-                        {[1, 2, 3, 4, 5].map((_, i) => (
-                            <div key={i} className="h-1 w-1 rounded-full bg-yellow-400" />
-                        ))}
+                    <div className="flex items-center gap-1 text-xs font-bold text-dark/50">
+                        <Star className={`h-3.5 w-3.5 ${product.reviewCount ? "fill-yellow-400 text-yellow-400" : "text-secondary/20"}`} />
+                        <span>{product.averageRating ? product.averageRating.toFixed(1) : "—"}</span>
+                        <span className="text-dark/30">({product.reviewCount ?? 0})</span>
                     </div>
                 </div>
                 <Link href={`/product/${product.id}`}>

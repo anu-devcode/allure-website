@@ -45,6 +45,7 @@ export function Footer() {
                         </h4>
                         <ul className="flex flex-col gap-2 text-sm text-dark/60">
                             <li><Link href="/contact" className="hover:text-accent">Contact Us</Link></li>
+                            <li><Link href="/track-order" className="hover:text-accent">Track Order</Link></li>
                             <li><Link href="/rules" className="hover:text-accent">Delivery Rules</Link></li>
                             <li><Link href="/terms" className="hover:text-accent">Terms & Conditions</Link></li>
                             <li><Link href="/about" className="hover:text-accent">About Us</Link></li>

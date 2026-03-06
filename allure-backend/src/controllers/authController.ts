@@ -13,6 +13,7 @@ import {
     updateAdminPasswordSchema,
     updateCustomerProfileSchema,
 } from '../schemas/authSchemas.js';
+import { claimGuestOrdersForCustomer, normalizePhone } from '../utils/orderSync.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 const ACCESS_TOKEN_EXPIRES_IN = (process.env.ACCESS_TOKEN_EXPIRES_IN || '15m') as jwt.SignOptions['expiresIn'];
@@ -162,6 +163,7 @@ export const customerRegister = async (req: Request, res: Response): Promise<voi
         }
 
         const { email, password, name, phone } = parsed.data;
+        const normalizedPhone = normalizePhone(phone);
 
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
@@ -169,7 +171,7 @@ export const customerRegister = async (req: Request, res: Response): Promise<voi
             return;
         }
 
-        const existingPhone = await prisma.user.findFirst({ where: { phone } });
+        const existingPhone = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
         if (existingPhone) {
             res.status(400).json({ message: 'Phone already exists' });
             return;
@@ -181,7 +183,7 @@ export const customerRegister = async (req: Request, res: Response): Promise<voi
                 email,
                 password: hashedPassword,
                 name,
-                phone,
+                phone: normalizedPhone,
                 role: 'CUSTOMER',
             },
             select: {
@@ -196,12 +198,14 @@ export const customerRegister = async (req: Request, res: Response): Promise<voi
         });
 
         const { token, refreshToken } = await issueAuthTokens(user, 'customer', 'CUSTOMER');
+        const claimedGuestOrders = await claimGuestOrdersForCustomer(user.id, user.phone);
 
         res.status(201).json({
             message: 'Customer registered successfully',
             token,
             refreshToken,
             user: toPublicCustomer(user),
+            claimedGuestOrders,
         });
     } catch (error) {
         res.status(500).json({ message: 'Error registering customer', error });
@@ -241,12 +245,14 @@ export const customerLogin = async (req: Request, res: Response): Promise<void> 
         await resetLoginAttemptState(user.id);
 
         const { token, refreshToken } = await issueAuthTokens(user, 'customer', 'CUSTOMER');
+        const claimedGuestOrders = await claimGuestOrdersForCustomer(user.id, user.phone);
 
         res.json({
             message: 'Customer login successful',
             token,
             refreshToken,
             user: toPublicCustomer(user),
+            claimedGuestOrders,
         });
     } catch (error) {
         res.status(500).json({ message: 'Error logging in customer', error });
@@ -580,10 +586,11 @@ export const updateCustomerProfile = async (req: Request, res: Response): Promis
         }
 
         const { name, phone, city } = parsed.data;
+        const normalizedPhone = phone ? normalizePhone(phone) : undefined;
 
-        if (phone) {
+        if (normalizedPhone) {
             const phoneOwner = await prisma.user.findFirst({
-                where: { phone, id: { not: authUser.userId } },
+                where: { phone: normalizedPhone, id: { not: authUser.userId } },
                 select: { id: true },
             });
             if (phoneOwner) {
@@ -596,7 +603,7 @@ export const updateCustomerProfile = async (req: Request, res: Response): Promis
             where: { id: authUser.userId },
             data: {
                 name,
-                phone,
+                phone: normalizedPhone,
                 city,
             },
             select: {
@@ -615,9 +622,12 @@ export const updateCustomerProfile = async (req: Request, res: Response): Promis
             return;
         }
 
+        const claimedGuestOrders = await claimGuestOrdersForCustomer(updatedUser.id, updatedUser.phone);
+
         res.json({
             message: 'Profile updated successfully',
             user: toPublicCustomer(updatedUser),
+            claimedGuestOrders,
         });
     } catch (error) {
         res.status(500).json({ message: 'Error updating customer profile', error });

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAdminAuth } from "@/store/useAdminAuth";
 import {
+    ADMIN_AUTH_EXPIRED_ERROR,
     CustomRequest,
     getCustomRequests,
     updateCustomRequestStatus,
@@ -16,9 +18,12 @@ const statusOptions: RequestStatus[] = ["PENDING", "QUOTED", "CONVERTED", "REJEC
 
 export default function AdminCustomRequestsPage() {
     const token = useAdminAuth((state) => state.token);
+    const logout = useAdminAuth((state) => state.logout);
+    const router = useRouter();
     const [requests, setRequests] = useState<CustomRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
+    const [error, setError] = useState<string | null>(null);
 
     const [statusDrafts, setStatusDrafts] = useState<Record<string, RequestStatus>>({});
     const [notesDrafts, setNotesDrafts] = useState<Record<string, string>>({});
@@ -32,17 +37,25 @@ export default function AdminCustomRequestsPage() {
             }
 
             try {
+                setError(null);
                 const data = await getCustomRequests(token);
                 setRequests(data);
-            } catch {
+            } catch (error) {
+                if (error instanceof Error && error.message === ADMIN_AUTH_EXPIRED_ERROR) {
+                    logout();
+                    router.push("/admin/login");
+                    return;
+                }
+
                 setRequests([]);
+                setError("Could not load custom requests right now.");
             } finally {
                 setLoading(false);
             }
         };
 
         void load();
-    }, [token]);
+    }, [logout, router, token]);
 
     const pendingCount = useMemo(
         () => requests.filter((request) => request.status === "PENDING").length,
@@ -99,7 +112,15 @@ export default function AdminCustomRequestsPage() {
         try {
             const updated = await updateCustomRequestStatus(request.id, nextStatus, nextNotes, token);
             setRequests((current) => current.map((item) => (item.id === request.id ? updated : item)));
-        } catch {
+            setError(null);
+        } catch (error) {
+            if (error instanceof Error && error.message === ADMIN_AUTH_EXPIRED_ERROR) {
+                logout();
+                router.push("/admin/login");
+                return;
+            }
+
+            setError("Could not save this request right now.");
             return;
         } finally {
             setSavingId(null);
@@ -125,6 +146,12 @@ export default function AdminCustomRequestsPage() {
                     className="h-11 w-full rounded-xl border border-secondary/20 px-4 text-sm outline-none focus:ring-2 focus:ring-accent/20"
                 />
             </div>
+
+            {error && (
+                <div className="rounded-3xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600">
+                    {error}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 gap-4">
                 {loading ? (

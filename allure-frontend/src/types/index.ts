@@ -30,6 +30,8 @@ export interface Product {
     productType?: string;
     details?: ProductDetails;
     estimatedArrival?: string; // e.g. "10-14 days"
+    reviewCount?: number;
+    averageRating?: number | null;
     description: string;
     variants: ProductVariant[];
 }
@@ -44,14 +46,38 @@ export interface OrderItem {
     price: number;
     quantity: number;
     image: string;
+    canReview?: boolean;
+    reviewId?: string | null;
+    reviewRating?: number | null;
+    reviewComment?: string | null;
+    reviewApproved?: boolean | null;
     variantSelection?: {
         [key: string]: string;
     };
 }
 
+export interface Review {
+    id: string;
+    customerId?: string | null;
+    customerName: string;
+    customerEmail?: string | null;
+    productId?: string | null;
+    productName?: string | null;
+    productSlug?: string | null;
+    orderId?: string | null;
+    orderNumber?: string | null;
+    rating: number;
+    comment: string;
+    isApproved: boolean;
+    isVerifiedPurchase: boolean;
+    createdAt: string;
+    updatedAt?: string;
+}
+
 export interface Order {
     id: string;
     orderNumber: string;
+    customerId?: string | null;
     customerName: string;
     phone: string;
     city: string;
@@ -59,5 +85,8 @@ export interface Order {
     items: OrderItem[];
     status: OrderStatus;
     paymentStatus: PaymentStatus;
+    paymentReference?: string | null;
+    paymentProof?: string | null;
+    orderSource?: "Guest" | "Account";
     createdAt: string;
 }
