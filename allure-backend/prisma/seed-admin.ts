@@ -7,19 +7,19 @@ const DEFAULT_ADMIN_PASSWORD = 'Admin@123456';
 const DEFAULT_ADMIN_NAME = 'Allure Admin';
 
 const DEFAULT_CATEGORIES = [
-  'Clothing - Women (Adult)',
-  'Clothing - Men (Adult)',
-  'Clothing - Girls (Kids)',
-  'Clothing - Boys (Kids)',
-  'Shoes - Women',
-  'Shoes - Men',
-  'Shoes - Girls',
-  'Shoes - Boys',
-  'Jewelry',
-  'Accessories',
-  'Cosmetics',
-  'Perfumes',
-  'Shein - Other (Non-Electronics)',
+  { name: 'Clothing - Women (Adult)', productType: 'Clothing' },
+  { name: 'Clothing - Men (Adult)', productType: 'Clothing' },
+  { name: 'Clothing - Girls (Kids)', productType: 'Clothing' },
+  { name: 'Clothing - Boys (Kids)', productType: 'Clothing' },
+  { name: 'Shoes - Women', productType: 'Shoes' },
+  { name: 'Shoes - Men', productType: 'Shoes' },
+  { name: 'Shoes - Girls', productType: 'Shoes' },
+  { name: 'Shoes - Boys', productType: 'Shoes' },
+  { name: 'Jewelry', productType: 'Jewelry' },
+  { name: 'Accessories', productType: 'Accessories' },
+  { name: 'Cosmetics', productType: 'Cosmetics' },
+  { name: 'Perfumes', productType: 'Perfumes' },
+  { name: 'Shein - Other (Non-Electronics)', productType: 'Other' },
 ];
 
 const slugify = (value: string) =>
@@ -81,13 +81,13 @@ async function seedAdmin() {
 
 async function seedCategories() {
   const results = await Promise.all(
-    DEFAULT_CATEGORIES.map((name) => {
+    DEFAULT_CATEGORIES.map(({ name, productType }) => {
       const slug = slugify(name);
       return prisma.category.upsert({
         where: { slug },
-        update: { name },
-        create: { name, slug },
-        select: { id: true, name: true, slug: true },
+        update: { name, productType },
+        create: { name, slug, productType },
+        select: { id: true, name: true, slug: true, productType: true },
       });
     })
   );

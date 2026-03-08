@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Product, ProductDetails } from "@/types";
 import { AdminCategory } from "@/services/adminProductService";
+import { deriveProductType } from "@/lib/product-type";
 
 interface ProductFormProps {
     initialData?: Product;
@@ -37,7 +38,6 @@ interface ProductFormProps {
 const categoryFallbacks = ["Dresses", "Tops", "Bottoms", "Outerwear", "Accessories"];
 const localImageStorageKey = "allure-admin-local-images";
 const badgeOptions = ["", "New", "Bestseller", "Limited", "Hot", "Sale", "Exclusive"];
-const productTypeOptions = ["Clothing", "Shoes", "Jewelry", "Accessories", "Cosmetics", "Perfumes", "Other"];
 
 export function ProductForm({ initialData, categories, onSubmit }: ProductFormProps) {
     const router = useRouter();
@@ -112,6 +112,27 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
             return;
         }
     }, [localImages]);
+
+    useEffect(() => {
+        if (!formData.categoryId && categories[0]?.id) {
+            setFormData((prev) => ({ ...prev, categoryId: categories[0].id }));
+        }
+    }, [categories, formData.categoryId]);
+
+    const selectedCategoryName = useMemo(() => {
+        const selectedCategory = categories.find((category) => category.id === formData.categoryId);
+        return selectedCategory?.name ?? initialData?.category ?? "";
+    }, [categories, formData.categoryId, initialData?.category]);
+
+    const selectedCategoryType = useMemo(() => {
+        const selectedCategory = categories.find((category) => category.id === formData.categoryId);
+        return selectedCategory?.productType;
+    }, [categories, formData.categoryId]);
+
+    const effectiveProductType = useMemo(
+        () => deriveProductType(selectedCategoryName, selectedCategoryType ?? formData.productType) ?? "Other",
+        [formData.productType, selectedCategoryName, selectedCategoryType]
+    );
 
     const handleAddImage = () => {
         const value = imageUrl.trim();
@@ -241,7 +262,7 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
                 images: formData.images,
                 currentSlug: formData.currentSlug,
                 badge: formData.badge || undefined,
-                productType: formData.productType || undefined,
+                productType: effectiveProductType,
                 details: formData.details,
             });
 
@@ -320,17 +341,9 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
                             </div>
                             <div className="flex flex-col gap-2">
                                 <label className="text-sm font-bold text-dark/80">Product Type</label>
-                                <select
-                                    value={formData.productType}
-                                    onChange={e => setFormData({ ...formData, productType: e.target.value })}
-                                    className="h-12 rounded-xl border border-secondary/20 bg-white px-4 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                                >
-                                    {productTypeOptions.map((type) => (
-                                        <option key={type} value={type}>
-                                            {type}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="flex h-12 items-center rounded-xl border border-secondary/20 bg-secondary/5 px-4 text-sm font-medium text-dark/70">
+                                    {effectiveProductType}
+                                </div>
                             </div>
                         </div>
 
@@ -488,7 +501,7 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
                             <Package className="h-5 w-5 text-accent" /> Product Details
                         </h3>
 
-                        {formData.productType === "Clothing" ? (
+                        {effectiveProductType === "Clothing" ? (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-bold text-dark/80">Gender</label>
@@ -554,7 +567,7 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
                             </div>
                         ) : null}
 
-                        {formData.productType === "Shoes" ? (
+                        {effectiveProductType === "Shoes" ? (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-bold text-dark/80">Size Range</label>
@@ -599,7 +612,7 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
                             </div>
                         ) : null}
 
-                        {formData.productType === "Jewelry" ? (
+                        {effectiveProductType === "Jewelry" ? (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-bold text-dark/80">Material</label>
@@ -640,7 +653,7 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
                             </div>
                         ) : null}
 
-                        {formData.productType === "Accessories" ? (
+                        {effectiveProductType === "Accessories" ? (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-bold text-dark/80">Material</label>
@@ -663,7 +676,7 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
                             </div>
                         ) : null}
 
-                        {formData.productType === "Cosmetics" ? (
+                        {effectiveProductType === "Cosmetics" ? (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-bold text-dark/80">Shade</label>
@@ -704,7 +717,7 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
                             </div>
                         ) : null}
 
-                        {formData.productType === "Perfumes" ? (
+                        {effectiveProductType === "Perfumes" ? (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-bold text-dark/80">Volume</label>
@@ -745,7 +758,7 @@ export function ProductForm({ initialData, categories, onSubmit }: ProductFormPr
                             </div>
                         ) : null}
 
-                        {formData.productType === "Other" ? (
+                        {effectiveProductType === "Other" ? (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-bold text-dark/80">Tags</label>

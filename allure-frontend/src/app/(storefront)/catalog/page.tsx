@@ -15,6 +15,7 @@ function CatalogContent() {
     const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     const category = searchParams.get("category");
     const availability = searchParams.get("availability");
@@ -50,6 +51,11 @@ function CatalogContent() {
         });
     }, [products, category, availability, searchQuery]);
 
+    const availableCategories = useMemo(
+        () => Array.from(new Set(products.map((product) => product.category))).sort((a, b) => a.localeCompare(b)),
+        [products]
+    );
+
     if (loading) {
         return (
             <div className="flex min-h-[400px] flex-col items-center justify-center">
@@ -77,22 +83,28 @@ function CatalogContent() {
                 {/* Sidebar Filters */}
                 <aside className="hidden lg:block">
                     <div className="sticky top-24">
-                        <CatalogFilters />
+                        <CatalogFilters categories={availableCategories} />
                     </div>
                 </aside>
 
                 {/* Mobile Filter Button */}
-                <div className="flex lg:hidden overflow-x-auto py-2 gap-2 scrollbar-hide">
-                    {/* Simple mobile scroll view for categories could go here, or a drawer */}
-                    <Button variant="outline" className="rounded-full gap-2 shrink-0">
+                <div className="flex flex-col gap-3 lg:hidden">
+                    <div className="flex overflow-x-auto py-2 gap-2 scrollbar-hide">
+                    <Button variant="outline" className="rounded-full gap-2 shrink-0" onClick={() => setShowMobileFilters((current) => !current)}>
                         <SlidersHorizontal className="h-4 w-4" /> Filters
                     </Button>
+                    </div>
+                    {showMobileFilters ? (
+                        <div className="rounded-3xl border border-secondary/10 bg-white p-4 shadow-sm">
+                            <CatalogFilters categories={availableCategories} compact />
+                        </div>
+                    ) : null}
                 </div>
 
                 {/* Product Grid */}
                 <div className="lg:col-span-3">
                     {filteredProducts.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                             {filteredProducts.map((product) => (
                                 <ProductCard key={product.id} product={product} />
                             ))}

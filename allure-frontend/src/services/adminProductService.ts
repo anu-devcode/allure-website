@@ -1,12 +1,17 @@
 import axios from "axios";
 import { Product } from "@/types";
+import { deriveProductType } from "@/lib/product-type";
+import { adminAuthService } from "@/services/adminAuthService";
+import { useAdminAuth } from "@/store/useAdminAuth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+export const ADMIN_PRODUCT_AUTH_EXPIRED_ERROR = "ADMIN_PRODUCT_AUTH_EXPIRED";
 
 export interface AdminCategory {
     id: string;
     name: string;
     slug: string;
+    productType: string;
     productCount?: number;
 }
 
@@ -14,6 +19,7 @@ type ApiCategory = {
     id: string;
     name: string;
     slug: string;
+    productType: string;
     _count?: {
         products?: number;
     };
@@ -44,7 +50,37 @@ type ApiProduct = {
         id: string;
         name: string;
         slug: string;
+        productType?: string | null;
     };
+};
+
+const parseDetailOptions = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+        return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (typeof value === "string") {
+        return value
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+    }
+
+    return [];
+};
+
+const buildVariantsFromDetails = (details?: Record<string, unknown> | null): Product["variants"] => {
+    if (!details) {
+        return [];
+    }
+
+    const sizeOptions = parseDetailOptions(details.sizes ?? details.sizeRange ?? details.size);
+    const shadeOptions = parseDetailOptions(details.shade);
+
+    return [
+        sizeOptions.length ? { name: "Size", options: sizeOptions } : null,
+        shadeOptions.length ? { name: "Shade", options: shadeOptions } : null,
+    ].filter((variant): variant is NonNullable<typeof variant> => Boolean(variant));
 };
 
 const availabilityMap: Record<ApiAvailability, Product["availability"]> = {
@@ -77,10 +113,10 @@ const mapApiProduct = (product: ApiProduct): Product => ({
     availability: availabilityMap[product.availability],
     origin: product.origin ?? undefined,
     badge: product.badge ?? undefined,
-    productType: product.productType ?? undefined,
+    productType: deriveProductType(product.category.name, product.category.productType ?? product.productType),
     details: (product.details ?? undefined) as Product["details"],
     description: product.description ?? "",
-    variants: [],
+    variants: buildVariantsFromDetails(product.details),
 });
 
 const slugify = (value: string) =>
@@ -91,6 +127,63 @@ const slugify = (value: string) =>
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-");
 
+const getActiveAdminToken = (fallbackToken?: string | null) => fallbackToken ?? useAdminAuth.getState().token;
+
+const tryRefreshAdminToken = async (): Promise<string | null> => {
+    const { refreshToken } = useAdminAuth.getState();
+    if (!refreshToken) return null;
+
+    try {
+        const refreshed = await adminAuthService.refresh(refreshToken);
+        useAdminAuth.setState({
+            admin: {
+                id: refreshed.user.id,
+                email: refreshed.user.email,
+                name: refreshed.user.name ?? undefined,
+                role: refreshed.user.role,
+            },
+            token: refreshed.token,
+            refreshToken: refreshed.refreshToken,
+            isAuthenticated: true,
+        });
+        return refreshed.token;
+    } catch {
+        useAdminAuth.setState({ admin: null, token: null, refreshToken: null, isAuthenticated: false });
+        return null;
+    }
+};
+
+const executeWithAdminAuthRetry = async <T>(requestFactory: (token: string) => Promise<T>, providedToken?: string): Promise<T> => {
+    const initialToken = getActiveAdminToken(providedToken);
+    if (!initialToken) {
+        throw new Error(ADMIN_PRODUCT_AUTH_EXPIRED_ERROR);
+    }
+
+    try {
+        return await requestFactory(initialToken);
+    } catch (error) {
+        if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+            throw error;
+        }
+
+        const refreshedToken = await tryRefreshAdminToken();
+        if (!refreshedToken) {
+            throw new Error(ADMIN_PRODUCT_AUTH_EXPIRED_ERROR);
+        }
+
+        try {
+            return await requestFactory(refreshedToken);
+        } catch (retryError) {
+            if (axios.isAxiosError(retryError) && retryError.response?.status === 401) {
+                useAdminAuth.setState({ admin: null, token: null, refreshToken: null, isAuthenticated: false });
+                throw new Error(ADMIN_PRODUCT_AUTH_EXPIRED_ERROR);
+            }
+
+            throw retryError;
+        }
+    }
+};
+
 export const adminProductService = {
     async getCategories(): Promise<AdminCategory[]> {
         const response = await axios.get<ApiCategory[]>(`${API_BASE_URL}/products/categories`);
@@ -98,40 +191,52 @@ export const adminProductService = {
             id: category.id,
             name: category.name,
             slug: category.slug,
+            productType: category.productType,
             productCount: category._count?.products ?? 0,
         }));
     },
 
-    async createCategory(token: string, payload: { name: string; slug: string }): Promise<AdminCategory> {
-        const response = await axios.post<ApiCategory>(`${API_BASE_URL}/products/categories`, payload, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+    async createCategory(token: string, payload: { name: string; slug: string; productType: string }): Promise<AdminCategory> {
+        const response = await executeWithAdminAuthRetry(
+            (activeToken) => axios.post<ApiCategory>(`${API_BASE_URL}/products/categories`, payload, {
+                headers: { Authorization: `Bearer ${activeToken}` },
+            }),
+            token
+        );
 
         return {
             id: response.data.id,
             name: response.data.name,
             slug: response.data.slug,
+            productType: response.data.productType,
             productCount: response.data._count?.products ?? 0,
         };
     },
 
-    async updateCategory(token: string, id: string, payload: { name: string; slug: string }): Promise<AdminCategory> {
-        const response = await axios.put<ApiCategory>(`${API_BASE_URL}/products/categories/${id}`, payload, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+    async updateCategory(token: string, id: string, payload: { name: string; slug: string; productType: string }): Promise<AdminCategory> {
+        const response = await executeWithAdminAuthRetry(
+            (activeToken) => axios.put<ApiCategory>(`${API_BASE_URL}/products/categories/${id}`, payload, {
+                headers: { Authorization: `Bearer ${activeToken}` },
+            }),
+            token
+        );
 
         return {
             id: response.data.id,
             name: response.data.name,
             slug: response.data.slug,
+            productType: response.data.productType,
             productCount: response.data._count?.products ?? 0,
         };
     },
 
     async deleteCategory(token: string, id: string): Promise<void> {
-        await axios.delete(`${API_BASE_URL}/products/categories/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        await executeWithAdminAuthRetry(
+            (activeToken) => axios.delete(`${API_BASE_URL}/products/categories/${id}`, {
+                headers: { Authorization: `Bearer ${activeToken}` },
+            }),
+            token
+        );
     },
 
     async getProducts(): Promise<Product[]> {
@@ -166,16 +271,19 @@ export const adminProductService = {
             images: string[];
         }
     ): Promise<Product> {
-        const response = await axios.post<ApiProduct>(
-            `${API_BASE_URL}/products`,
-            {
-                ...payload,
-                slug: `${slugify(payload.name)}-${Date.now()}`,
-                availability: reverseAvailabilityMap[payload.availability],
-            },
-            {
-                headers: { Authorization: `Bearer ${token}` },
-            }
+        const response = await executeWithAdminAuthRetry(
+            (activeToken) => axios.post<ApiProduct>(
+                `${API_BASE_URL}/products`,
+                {
+                    ...payload,
+                    slug: `${slugify(payload.name)}-${Date.now()}`,
+                    availability: reverseAvailabilityMap[payload.availability],
+                },
+                {
+                    headers: { Authorization: `Bearer ${activeToken}` },
+                }
+            ),
+            token
         );
 
         return mapApiProduct(response.data);
@@ -205,24 +313,30 @@ export const adminProductService = {
             currentSlug?: string;
         }
     ): Promise<Product> {
-        const response = await axios.put<ApiProduct>(
-            `${API_BASE_URL}/products/${id}`,
-            {
-                ...payload,
-                slug: payload.currentSlug ?? `${slugify(payload.name)}-${Date.now()}`,
-                availability: reverseAvailabilityMap[payload.availability],
-            },
-            {
-                headers: { Authorization: `Bearer ${token}` },
-            }
+        const response = await executeWithAdminAuthRetry(
+            (activeToken) => axios.put<ApiProduct>(
+                `${API_BASE_URL}/products/${id}`,
+                {
+                    ...payload,
+                    slug: payload.currentSlug ?? `${slugify(payload.name)}-${Date.now()}`,
+                    availability: reverseAvailabilityMap[payload.availability],
+                },
+                {
+                    headers: { Authorization: `Bearer ${activeToken}` },
+                }
+            ),
+            token
         );
 
         return mapApiProduct(response.data);
     },
 
     async deleteProduct(token: string, id: string): Promise<void> {
-        await axios.delete(`${API_BASE_URL}/products/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        await executeWithAdminAuthRetry(
+            (activeToken) => axios.delete(`${API_BASE_URL}/products/${id}`, {
+                headers: { Authorization: `Bearer ${activeToken}` },
+            }),
+            token
+        );
     },
 };

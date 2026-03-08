@@ -3,9 +3,14 @@ import prisma from '../services/prisma.js';
 
 export const createCategory = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { name, slug } = req.body;
+        const { name, slug, productType } = req.body;
+        if (!name || !slug || !productType) {
+            res.status(400).json({ message: 'name, slug, and productType are required' });
+            return;
+        }
+
         const category = await prisma.category.create({
-            data: { name, slug },
+            data: { name, slug, productType },
         });
         res.status(201).json(category);
     } catch (error) {
@@ -27,10 +32,15 @@ export const getCategories = async (req: Request, res: Response): Promise<void> 
 export const updateCategory = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const { name, slug } = req.body;
+        const { name, slug, productType } = req.body;
+        if (!name || !slug || !productType) {
+            res.status(400).json({ message: 'name, slug, and productType are required' });
+            return;
+        }
+
         const category = await prisma.category.update({
             where: { id: id as string },
-            data: { name, slug },
+            data: { name, slug, productType },
         });
         res.json(category);
     } catch (error) {

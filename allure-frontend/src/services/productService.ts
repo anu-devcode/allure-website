@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Product } from "@/types";
+import { deriveProductType } from "@/lib/product-type";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -30,7 +31,37 @@ type ApiProduct = {
         id: string;
         name: string;
         slug: string;
+        productType?: string | null;
     };
+};
+
+const parseDetailOptions = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+        return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (typeof value === "string") {
+        return value
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+    }
+
+    return [];
+};
+
+const buildVariantsFromDetails = (details?: Record<string, unknown> | null): Product["variants"] => {
+    if (!details) {
+        return [];
+    }
+
+    const sizeOptions = parseDetailOptions(details.sizes ?? details.sizeRange ?? details.size);
+    const shadeOptions = parseDetailOptions(details.shade);
+
+    return [
+        sizeOptions.length ? { name: "Size", options: sizeOptions } : null,
+        shadeOptions.length ? { name: "Shade", options: shadeOptions } : null,
+    ].filter((variant): variant is NonNullable<typeof variant> => Boolean(variant));
 };
 
 const availabilityMap: Record<ApiAvailability, Product["availability"]> = {
@@ -57,12 +88,12 @@ const mapApiProduct = (product: ApiProduct): Product => ({
     availability: availabilityMap[product.availability],
     origin: product.origin ?? undefined,
     badge: product.badge ?? undefined,
-    productType: product.productType ?? undefined,
+    productType: deriveProductType(product.category.name, product.category.productType ?? product.productType),
     details: (product.details ?? undefined) as Product["details"],
     reviewCount: product.reviewCount ?? 0,
     averageRating: product.averageRating ?? null,
     description: product.description ?? "",
-    variants: [],
+    variants: buildVariantsFromDetails(product.details),
 });
 
 export const productService = {

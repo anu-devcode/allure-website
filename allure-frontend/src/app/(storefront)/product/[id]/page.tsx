@@ -32,14 +32,49 @@ const TAB_LABELS: Record<TabKey, string> = {
     shipping: "Shipping & Returns",
 };
 
-// Static data for specs fallback
-const MOCK_SPECS = [
-    { label: "Material", value: "Premium Fabric" },
-    { label: "Care", value: "Machine Wash Cold, Hang Dry" },
-    { label: "Fit", value: "Regular / True to Size" },
-    { label: "Season", value: "All Season" },
-    { label: "Imported", value: "Yes" },
-];
+const DETAIL_LABELS: Record<string, string> = {
+    ageGroup: "Age Group",
+    care: "Care",
+    concentration: "Concentration",
+    dimensions: "Dimensions",
+    fit: "Fit",
+    gender: "Gender",
+    heelHeight: "Heel Height",
+    material: "Material",
+    notes: "Notes",
+    notesBase: "Base Notes",
+    notesTop: "Top Notes",
+    plating: "Plating",
+    shade: "Shade",
+    size: "Size",
+    sizeRange: "Size Range",
+    sizes: "Sizes",
+    skinType: "Skin Type",
+    stone: "Stone",
+    tags: "Tags",
+    usage: "Usage",
+    volume: "Volume",
+};
+
+const formatDetailValue = (value: string | number | boolean | string[] | null | undefined) => {
+    if (Array.isArray(value)) {
+        return value.join(", ");
+    }
+
+    if (typeof value === "boolean") {
+        return value ? "Yes" : "No";
+    }
+
+    return String(value ?? "").trim();
+};
+
+const toHeadline = (value: string) =>
+    value
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
 
 export default function ProductPage({ params }: ProductPageProps) {
     const { id } = use(params);
@@ -168,6 +203,53 @@ export default function ProductPage({ params }: ProductPageProps) {
 
     const displayReviewCount = product?.reviewCount ?? reviewSummary.reviewCount;
 
+    const detailEntries = useMemo(() => {
+        if (!product?.details) {
+            return [];
+        }
+
+        return Object.entries(product.details)
+            .map(([key, value]) => ({
+                label: DETAIL_LABELS[key] ?? toHeadline(key),
+                value: formatDetailValue(value),
+            }))
+            .filter((entry) => entry.value.length > 0);
+    }, [product?.details]);
+
+    const specificationRows = useMemo(() => {
+        if (!product) {
+            return [];
+        }
+
+        return [
+            product.productType ? { label: "Product Type", value: product.productType } : null,
+            product.category ? { label: "Category", value: product.category } : null,
+            product.badge ? { label: "Badge", value: product.badge } : null,
+            product.origin ? { label: "Origin", value: product.origin } : null,
+            product.sku ? { label: "SKU", value: product.sku } : null,
+            typeof product.stockQuantity === "number" ? { label: "Stock", value: `${product.stockQuantity} available` } : null,
+            product.isBulkAvailable && product.bulkMinQty && product.bulkPrice
+                ? { label: "Bulk Pricing", value: `${product.bulkPrice.toLocaleString()} ETB from ${product.bulkMinQty}+ units` }
+                : null,
+            ...detailEntries,
+        ].filter((entry): entry is { label: string; value: string } => Boolean(entry));
+    }, [detailEntries, product]);
+
+    const descriptionCards = useMemo(() => {
+        if (!product) {
+            return [];
+        }
+
+        return [
+            { label: "Category", value: product.category, icon: Package },
+            product.productType ? { label: "Product Type", value: product.productType, icon: Info } : null,
+            product.origin ? { label: "Origin", value: product.origin, icon: Truck } : null,
+            { label: "Availability", value: product.availability, icon: Shield },
+            product.sku ? { label: "SKU", value: product.sku, icon: Check } : null,
+            typeof product.stockQuantity === "number" ? { label: "Stock", value: `${product.stockQuantity} ready`, icon: Package } : null,
+        ].filter((entry): entry is { label: string; value: string; icon: typeof Package } => Boolean(entry));
+    }, [product]);
+
     // Build gallery from existing data — no refetch
     const galleryImages = product
         ? [product.image, ...(product.gallery || [])].length > 1
@@ -270,10 +352,16 @@ export default function ProductPage({ params }: ProductPageProps) {
                             <div className="flex items-center gap-2 flex-wrap">
                                 <Badge variant="secondary" className="bg-primary/20 text-accent border-none rounded-full px-4 py-1 font-bold text-xs uppercase tracking-widest">{product.category}</Badge>
                                 {product.origin && <Badge variant="outline" className="border-secondary/20 rounded-full px-4 py-1 text-dark/40 font-medium">From {product.origin}</Badge>}
+                                {product.productType && product.productType !== product.category && <Badge variant="outline" className="border-secondary/20 rounded-full px-4 py-1 text-dark/50 font-medium">{product.productType}</Badge>}
+                                {product.badge && <Badge variant="outline" className="border-accent/20 bg-accent/5 rounded-full px-4 py-1 text-accent font-semibold">{product.badge}</Badge>}
                             </div>
                             <h1 className="font-display text-3xl font-bold tracking-tight text-dark md:text-4xl lg:text-5xl">{product.name}</h1>
                             <div className="flex items-center gap-5 flex-wrap">
-                                <p className="font-display text-2xl font-bold text-accent md:text-3xl">{product.price.toLocaleString()} ETB</p>
+                                <div className="flex items-end gap-3 flex-wrap">
+                                    <p className="font-display text-2xl font-bold text-accent md:text-3xl">{(product.salePrice ?? product.price).toLocaleString()} ETB</p>
+                                    {product.salePrice && <p className="text-base font-semibold text-dark/30 line-through">{product.price.toLocaleString()} ETB</p>}
+                                    {!product.salePrice && product.compareAtPrice && <p className="text-base font-semibold text-dark/30 line-through">{product.compareAtPrice.toLocaleString()} ETB</p>}
+                                </div>
                                 <div className="flex items-center gap-1.5 rounded-full bg-yellow-400/10 px-3 py-1 text-yellow-600">
                                     <Star className="h-4 w-4 fill-current" />
                                     <span className="text-sm font-bold">{displayReviewCount ? displayRating.toFixed(1) : "—"}</span>
@@ -286,7 +374,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
                         {/* Short Description */}
                         <p className="text-sm leading-relaxed text-dark/55 md:text-base line-clamp-3">
-                            {product.description}
+                            {product.description || "This product was added from the admin catalog and its full details are shown below."}
                         </p>
 
                         {/* Dynamic Variants */}
@@ -348,11 +436,11 @@ export default function ProductPage({ params }: ProductPageProps) {
                                 </div>
                                 <div className="flex items-center gap-3 text-sm font-medium text-dark/70">
                                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-accent shadow-sm"><Info className="h-3.5 w-3.5" /></div>
-                                    <span>{product.availability === "Pre-Order" ? `Pre-order: arrives in ${product.estimatedArrival || "10-14 days"}` : "Immediate availability in store"}</span>
+                                    <span>{product.availability === "Pre-Order" ? `Pre-order item${product.origin ? ` from ${product.origin}` : ""}: arrives in ${product.estimatedArrival || "10-14 days"}` : product.availability === "Sold Out" ? "Currently sold out. Contact support for restock timing." : "Immediate availability in store"}</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm font-medium text-dark/70">
                                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-accent shadow-sm"><Check className="h-3.5 w-3.5" /></div>
-                                    <span>100% Quality Guaranteed</span>
+                                    <span>{product.isBulkAvailable && product.bulkMinQty && product.bulkPrice ? `Bulk price available from ${product.bulkMinQty}+ units at ${product.bulkPrice.toLocaleString()} ETB.` : "100% Quality Guaranteed"}</span>
                                 </div>
                             </div>
                         </div>
@@ -384,32 +472,21 @@ export default function ProductPage({ params }: ProductPageProps) {
                             <div className="animate-tab-fade-in">
                                 <h3 className="font-display text-xl font-bold text-dark mb-4">About This Product</h3>
                                 <p className="text-base leading-relaxed text-dark/60 max-w-3xl">
-                                    {product.description}
+                                    {product.description || "This listing is managed directly from the admin catalog. All visible product information on this page comes from the admin-created product record."}
                                 </p>
                                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/5">
-                                        <Package className="h-5 w-5 text-accent/50" />
-                                        <div>
-                                            <p className="text-xs font-bold text-dark/40 uppercase tracking-widest">Category</p>
-                                            <p className="text-sm font-medium text-dark">{product.category}</p>
-                                        </div>
-                                    </div>
-                                    {product.origin && (
-                                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/5">
-                                            <Truck className="h-5 w-5 text-accent/50" />
-                                            <div>
-                                                <p className="text-xs font-bold text-dark/40 uppercase tracking-widest">Origin</p>
-                                                <p className="text-sm font-medium text-dark">{product.origin}</p>
+                                    {descriptionCards.map((card) => {
+                                        const Icon = card.icon;
+                                        return (
+                                            <div key={card.label} className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/5">
+                                                <Icon className="h-5 w-5 text-accent/50" />
+                                                <div>
+                                                    <p className="text-xs font-bold text-dark/40 uppercase tracking-widest">{card.label}</p>
+                                                    <p className="text-sm font-medium text-dark">{card.value}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/5">
-                                        <Shield className="h-5 w-5 text-accent/50" />
-                                        <div>
-                                            <p className="text-xs font-bold text-dark/40 uppercase tracking-widest">Status</p>
-                                            <p className="text-sm font-medium text-dark">{product.availability}</p>
-                                        </div>
-                                    </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
@@ -419,12 +496,14 @@ export default function ProductPage({ params }: ProductPageProps) {
                             <div className="animate-tab-fade-in">
                                 <h3 className="font-display text-xl font-bold text-dark mb-6">Specifications</h3>
                                 <div className="flex flex-col divide-y divide-secondary/10">
-                                    {MOCK_SPECS.map((spec) => (
+                                    {specificationRows.length > 0 ? specificationRows.map((spec) => (
                                         <div key={spec.label} className="flex items-center justify-between py-4">
                                             <span className="text-sm font-medium text-dark/50">{spec.label}</span>
                                             <span className="text-sm font-bold text-dark">{spec.value}</span>
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <div className="py-4 text-sm text-dark/40">No additional specifications were added for this product yet.</div>
+                                    )}
                                     {product.variants.map((v) => (
                                         <div key={v.name} className="flex items-center justify-between py-4">
                                             <span className="text-sm font-medium text-dark/50">Available {v.name}s</span>
@@ -552,7 +631,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                                         <ul className="text-sm text-dark/60 space-y-2 leading-relaxed">
                                             <li>• Free delivery in Addis Ababa</li>
                                             <li>• Standard delivery: 1-3 business days</li>
-                                            <li>• Pre-orders: {product.estimatedArrival || "7-14 days"}</li>
+                                            <li>• {product.availability === "Pre-Order" ? `Pre-orders: ${product.estimatedArrival || "7-14 days"}` : "In-store items dispatch as soon as confirmed."}</li>
                                         </ul>
                                     </div>
                                     <div className="p-6 rounded-2xl bg-secondary/5 border border-secondary/10">
@@ -576,7 +655,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                                             <h4 className="font-display font-bold text-dark">Need Help?</h4>
                                         </div>
                                         <p className="text-sm text-dark/60 leading-relaxed">
-                                            Contact us via Telegram <span className="font-medium text-accent">@AllureOnline</span> or call <span className="font-medium text-accent">0911 223 344</span> for any questions about shipping or returns.
+                                            Contact us via Telegram <span className="font-medium text-accent">@AllureOnline</span> or call <span className="font-medium text-accent">0911 223 344</span> for any questions about shipping, returns, or product sourcing{product.origin ? ` from ${product.origin}` : ""}.
                                         </p>
                                     </div>
                                 </div>

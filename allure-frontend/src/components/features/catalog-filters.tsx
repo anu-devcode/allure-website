@@ -4,22 +4,30 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 
-const categories = ["All", "Dresses", "Tops", "Bottoms", "Outerwear", "Accessories"];
 const availabilityTypes = ["All", "In-Store", "Pre-Order"];
 
-export function CatalogFilters() {
+interface CatalogFiltersProps {
+    categories: string[];
+    compact?: boolean;
+}
+
+export function CatalogFilters({ categories, compact = false }: CatalogFiltersProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
     const currentCategory = searchParams.get("category") || "All";
     const currentAvailability = searchParams.get("availability") || "All";
+    const currentSearch = searchParams.get("search") || "";
+    const [searchValue, setSearchValue] = useState(currentSearch);
+
+    const categoryOptions = useMemo(() => ["All", ...categories], [categories]);
 
     const createQueryString = useCallback(
         (name: string, value: string) => {
             const params = new URLSearchParams(searchParams.toString());
-            if (value === "All") {
+            if (value === "All" || value.trim() === "") {
                 params.delete(name);
             } else {
                 params.set(name, value);
@@ -33,19 +41,25 @@ export function CatalogFilters() {
         router.push(`/catalog?${createQueryString(name, value)}`, { scroll: false });
     };
 
+    const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        router.push(`/catalog?${createQueryString("search", searchValue)}`, { scroll: false });
+    };
+
     const clearFilters = () => {
+        setSearchValue("");
         router.push("/catalog");
     };
 
     const isFiltered = searchParams.toString() !== "";
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className={`flex flex-col ${compact ? "gap-6" : "gap-8"}`}>
             {/* Category Section */}
             <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider text-dark mb-4">Categories</h3>
                 <div className="flex flex-wrap gap-2">
-                    {categories.map((cat) => (
+                    {categoryOptions.map((cat) => (
                         <button
                             key={cat}
                             onClick={() => handleFilter("category", cat)}
@@ -83,14 +97,19 @@ export function CatalogFilters() {
             </div>
 
             {/* Search Input Mock */}
-            <div className="relative">
+            <form onSubmit={handleSearchSubmit} className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dark/40" />
                 <input
                     type="text"
+                    value={searchValue}
+                    onChange={(event) => setSearchValue(event.target.value)}
                     placeholder="Search products..."
-                    className="w-full rounded-xl border border-secondary/20 bg-white py-2 pl-10 pr-4 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="w-full rounded-xl border border-secondary/20 bg-white py-2 pl-10 pr-20 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                 />
-            </div>
+                <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-white">
+                    Go
+                </button>
+            </form>
 
             {isFiltered && (
                 <Button

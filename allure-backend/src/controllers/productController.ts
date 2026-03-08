@@ -64,10 +64,20 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
             availability,
             origin,
             badge,
-            productType,
             details,
             images,
         } = req.body;
+
+        const category = await prisma.category.findUnique({
+            where: { id: categoryId },
+            select: { id: true, productType: true },
+        });
+
+        if (!category) {
+            res.status(400).json({ message: 'Category not found' });
+            return;
+        }
+
         const product = await prisma.product.create({
             data: {
                 name,
@@ -85,7 +95,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
                 availability,
                 origin,
                 badge,
-                productType,
+                productType: category.productType,
                 details,
                 images,
             },
@@ -145,10 +155,20 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
             availability,
             origin,
             badge,
-            productType,
             details,
             images,
         } = req.body;
+
+        const category = await prisma.category.findUnique({
+            where: { id: categoryId },
+            select: { id: true, productType: true },
+        });
+
+        if (!category) {
+            res.status(400).json({ message: 'Category not found' });
+            return;
+        }
+
         const product = await prisma.product.update({
             where: { id: id as string },
             data: {
@@ -167,7 +187,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
                 availability,
                 origin,
                 badge,
-                productType,
+                productType: category.productType,
                 details,
                 images,
             },
