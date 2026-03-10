@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Link as LinkIcon, Image as ImageIcon, CheckCircle2, ChevronLeft, Upload, X, ArrowRight, Sparkles, MapPin, Phone, User, Globe } from "lucide-react";
+import { Send, Link as LinkIcon, Image as ImageIcon, CheckCircle2, ChevronLeft, X, Sparkles, Phone, User, Globe } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { submitCustomRequest } from "@/services/customRequestService";
+import { usePersistentDraft } from "@/hooks/usePersistentDraft";
+import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
 
 export default function CustomPreorderPage() {
     const [submitted, setSubmitted] = useState(false);
@@ -13,12 +15,23 @@ export default function CustomPreorderPage() {
     const [error, setError] = useState<string | null>(null);
     const [previews, setPreviews] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const previewsRef = useRef<string[]>([]);
 
     const [formData, setFormData] = useState({
         customerName: "",
         customerPhone: "",
         itemLink: "",
         description: ""
+    });
+
+    const handleRestore = useCallback((draft: typeof formData) => {
+        setFormData((prev) => ({ ...prev, ...draft }));
+    }, []);
+
+    const { saveState, restored, clearDraft } = usePersistentDraft({
+        storageKey: "allure-custom-request-draft-v1",
+        value: formData,
+        onRestore: handleRestore,
     });
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,10 +51,14 @@ export default function CustomPreorderPage() {
         });
     };
 
+    useEffect(() => {
+        previewsRef.current = previews;
+    }, [previews]);
+
     // Clean up object URLs on unmount
     useEffect(() => {
         return () => {
-            previews.forEach(url => URL.revokeObjectURL(url));
+            previewsRef.current.forEach((url) => URL.revokeObjectURL(url));
         };
     }, []);
 
@@ -52,8 +69,9 @@ export default function CustomPreorderPage() {
         try {
             await submitCustomRequest(formData);
             setSubmitted(true);
+            clearDraft();
             window.scrollTo({ top: 0, behavior: "smooth" });
-        } catch (err) {
+        } catch {
             setError("Failed to send request. Please check your connection and try again.");
         } finally {
             setLoading(false);
@@ -189,6 +207,7 @@ export default function CustomPreorderPage() {
                     <div className="lg:col-span-12 xl:col-span-7">
                         <div className="rounded-[3rem] bg-white p-8 md:p-12 shadow-2xl shadow-secondary/10 border border-secondary/10 animate-slide-up-fade [animation-delay:200ms]">
                             <form className="flex flex-col gap-10" onSubmit={handleSubmit}>
+                                <AutosaveIndicator saveState={saveState} restored={restored} />
                                 {error && (
                                     <div className="p-5 bg-red-50 text-red-600 rounded-2xl text-sm font-medium border border-red-100 italic animate-shake">
                                         {error}

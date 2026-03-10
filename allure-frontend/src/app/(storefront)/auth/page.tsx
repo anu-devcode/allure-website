@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useCustomerAuth } from "@/store/useCustomerAuth";
 import { Mail, Lock, User, Phone, Eye, EyeOff, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import { usePersistentDraft } from "@/hooks/usePersistentDraft";
+import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
 
 export default function CustomerAuthPage() {
     const [mode, setMode] = useState<"login" | "register">("login");
@@ -26,18 +28,47 @@ export default function CustomerAuthPage() {
     const register = useCustomerAuth((s) => s.register);
     const router = useRouter();
 
+    const handleRestore = useCallback((draft: {
+        mode: "login" | "register";
+        email: string;
+        name: string;
+        phone: string;
+    }) => {
+        setMode(draft.mode ?? "login");
+        setEmail(draft.email ?? "");
+        setName(draft.name ?? "");
+        setPhone(draft.phone ?? "");
+    }, []);
+
+    const { saveState, restored, clearDraft } = usePersistentDraft({
+        storageKey: "allure-customer-auth-draft-v1",
+        value: {
+            mode,
+            email,
+            name,
+            phone,
+        },
+        onRestore: handleRestore,
+    });
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         setIsLoading(true);
 
-        const success = await login(email, password);
-        if (success) {
-            router.push("/account");
-        } else {
-            setError("Invalid email or password. Please try again.");
+        try {
+            const success = await login(email, password);
+            if (success) {
+                clearDraft();
+                router.push("/account");
+            } else {
+                setError("Invalid email or password. Please try again.");
+            }
+        } catch {
+            setError("Could not sign in right now. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     const handleRegister = async (e: React.FormEvent) => {
@@ -54,13 +85,19 @@ export default function CustomerAuthPage() {
         }
 
         setIsLoading(true);
-        const success = await register(name, email, phone, password);
-        if (success) {
-            router.push("/account");
-        } else {
-            setError("Could not create account. Please check your details.");
+        try {
+            const success = await register(name, email, phone, password);
+            if (success) {
+                clearDraft();
+                router.push("/account");
+            } else {
+                setError("Could not create account. Please check your details.");
+            }
+        } catch {
+            setError("Could not create account right now. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     return (
@@ -108,6 +145,7 @@ export default function CustomerAuthPage() {
 
                     {/* Form Card */}
                     <div className="rounded-[2.5rem] bg-white p-8 md:p-10 shadow-2xl shadow-secondary/10 border border-secondary/10 animate-slide-up-fade">
+                        <AutosaveIndicator saveState={saveState} restored={restored} className="mb-6" />
                         {error && (
                             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-medium border border-red-100 flex items-center gap-3">
                                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 flex-shrink-0" />

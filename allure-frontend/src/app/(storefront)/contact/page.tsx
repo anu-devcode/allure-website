@@ -1,33 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, MessageSquare, MapPin, Send, User, Clock, CheckCircle2, Sparkles } from "lucide-react";
+import { Phone, MessageSquare, MapPin, Send, User, Clock, CheckCircle2, Sparkles } from "lucide-react";
 import { adminContactService } from "@/services/adminContactService";
+import { usePersistentDraft } from "@/hooks/usePersistentDraft";
+import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
+import { useCustomerAuth } from "@/store/useCustomerAuth";
+import { useStorefrontCms } from "@/components/providers/storefront-cms-provider";
 
 export default function ContactPage() {
+    const token = useCustomerAuth((state) => state.token);
+    const { content } = useStorefrontCms();
+    const contactContent = content.contact;
     const [sent, setSent] = useState(false);
     const [loading, setLoading] = useState(false);
     const [name, setName] = useState("");
     const [contact, setContact] = useState("");
     const [message, setMessage] = useState("");
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    const handleRestore = useCallback((draft: { name: string; contact: string; message: string }) => {
+        setName(draft.name ?? "");
+        setContact(draft.contact ?? "");
+        setMessage(draft.message ?? "");
+    }, []);
+
+    const { saveState, restored, clearDraft } = usePersistentDraft({
+        storageKey: "allure-contact-draft-v1",
+        value: { name, contact, message },
+        onRestore: handleRestore,
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setSubmitError(null);
 
         try {
             await adminContactService.submitMessage({
                 name,
                 contact,
                 message,
-            });
+            }, token);
 
             setSent(true);
             setName("");
             setContact("");
             setMessage("");
+            clearDraft();
             setTimeout(() => setSent(false), 3000);
+        } catch {
+            setSubmitError("We could not send your message. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -40,13 +64,13 @@ export default function ContactPage() {
                 <div className="container relative z-10 mx-auto text-center">
                     <div className="animate-slide-up-fade flex flex-col items-center gap-4">
                         <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-accent border border-primary/20">
-                            We're Here For You
+                            {contactContent.heroEyebrow}
                         </div>
                         <h1 className="font-display text-4xl font-bold text-dark md:text-6xl lg:text-7xl tracking-tight leading-[1.1]">
-                            Get in <span className="italic text-primary">Touch</span>
+                            {contactContent.heroTitle} <span className="italic text-primary">{contactContent.heroAccent}</span>
                         </h1>
                         <p className="max-w-lg text-sm text-dark/50 md:text-base lg:text-lg leading-relaxed">
-                            Have questions about an order or a preorder? We're here to help.
+                            {contactContent.heroDescription}
                         </p>
                     </div>
                 </div>
@@ -67,9 +91,9 @@ export default function ContactPage() {
                                         <Phone className="h-6 w-6" />
                                     </div>
                                     <div>
-                                        <h3 className="font-display text-base font-bold text-dark">Phone</h3>
-                                        <p className="text-sm text-dark/60 mt-0.5">0911 223 344</p>
-                                        <p className="text-xs text-dark/40 mt-0.5">Available 9:00 AM – 8:00 PM</p>
+                                        <h3 className="font-display text-base font-bold text-dark">{contactContent.phoneLabel}</h3>
+                                        <p className="text-sm text-dark/60 mt-0.5">{contactContent.phoneNumber}</p>
+                                        <p className="text-xs text-dark/40 mt-0.5">{contactContent.phoneHours}</p>
                                     </div>
                                 </div>
                             </div>
@@ -81,9 +105,9 @@ export default function ContactPage() {
                                         <MessageSquare className="h-6 w-6" />
                                     </div>
                                     <div>
-                                        <h3 className="font-display text-base font-bold text-dark">Social Channels</h3>
-                                        <p className="text-sm text-dark/60 mt-0.5">Telegram: @AllureOnline</p>
-                                        <p className="text-sm text-dark/60">Instagram: @allure_et</p>
+                                        <h3 className="font-display text-base font-bold text-dark">{contactContent.socialLabel}</h3>
+                                        <p className="text-sm text-dark/60 mt-0.5">Telegram: {contactContent.telegramHandle}</p>
+                                        <p className="text-sm text-dark/60">Instagram: {contactContent.instagramHandle}</p>
                                     </div>
                                 </div>
                             </div>
@@ -95,9 +119,9 @@ export default function ContactPage() {
                                         <MapPin className="h-6 w-6" />
                                     </div>
                                     <div>
-                                        <h3 className="font-display text-base font-bold text-dark">Location</h3>
-                                        <p className="text-sm text-dark/60 mt-0.5">Addis Ababa, Ethiopia</p>
-                                        <p className="text-sm text-dark/60">Bole, Medhanialem Area</p>
+                                        <h3 className="font-display text-base font-bold text-dark">{contactContent.locationLabel}</h3>
+                                        <p className="text-sm text-dark/60 mt-0.5">{contactContent.locationLineOne}</p>
+                                        <p className="text-sm text-dark/60">{contactContent.locationLineTwo}</p>
                                     </div>
                                 </div>
                             </div>
@@ -113,9 +137,9 @@ export default function ContactPage() {
                                     <Clock className="h-5 w-5 text-white/60" />
                                 </div>
                                 <div>
-                                    <h4 className="font-display font-bold text-lg mb-1">Order Issues?</h4>
+                                    <h4 className="font-display font-bold text-lg mb-1">{contactContent.orderHelpTitle}</h4>
                                     <p className="text-white/50 text-sm leading-relaxed">
-                                        If you're contacting us about a specific order, please have your order number ready (e.g. ORD-1001) so we can help you faster.
+                                        {contactContent.orderHelpText}
                                     </p>
                                 </div>
                             </div>
@@ -126,11 +150,17 @@ export default function ContactPage() {
                     <div className="animate-slide-up-fade [animation-delay:200ms]">
                         <div className="rounded-[2.5rem] bg-white p-8 md:p-10 shadow-2xl shadow-secondary/10 border border-secondary/10">
                             <div className="mb-8">
-                                <h2 className="font-display text-2xl font-bold text-dark tracking-tight md:text-3xl">Send Us a Message</h2>
-                                <p className="text-sm text-dark/50 mt-1">We usually reply within a few hours.</p>
+                                <h2 className="font-display text-2xl font-bold text-dark tracking-tight md:text-3xl">{contactContent.formTitle}</h2>
+                                <p className="text-sm text-dark/50 mt-1">{contactContent.formSubtitle}</p>
                             </div>
 
                             <form className="flex flex-col gap-7" onSubmit={handleSubmit}>
+                                <AutosaveIndicator saveState={saveState} restored={restored} />
+                                {submitError && (
+                                    <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                                        {submitError}
+                                    </div>
+                                )}
                                 <div className="flex flex-col gap-3">
                                     <label className="text-xs font-black uppercase tracking-[0.2em] text-dark/40 ml-1">Your Name</label>
                                     <div className="relative group">

@@ -350,12 +350,12 @@ export default function ProductPage({ params }: ProductPageProps) {
                     <div className="flex flex-col gap-7 animate-slide-up-fade [animation-delay:150ms]">
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <Badge variant="secondary" className="bg-primary/20 text-accent border-none rounded-full px-4 py-1 font-bold text-xs uppercase tracking-widest">{product.category}</Badge>
-                                {product.origin && <Badge variant="outline" className="border-secondary/20 rounded-full px-4 py-1 text-dark/40 font-medium">From {product.origin}</Badge>}
-                                {product.productType && product.productType !== product.category && <Badge variant="outline" className="border-secondary/20 rounded-full px-4 py-1 text-dark/50 font-medium">{product.productType}</Badge>}
-                                {product.badge && <Badge variant="outline" className="border-accent/20 bg-accent/5 rounded-full px-4 py-1 text-accent font-semibold">{product.badge}</Badge>}
+                                <Badge variant="secondary" className="rounded-full border-none bg-primary/20 px-4 py-1 text-xs font-bold uppercase tracking-widest text-accent shadow-sm transition-transform duration-300 hover:-translate-y-0.5">{product.category}</Badge>
+                                {product.origin && <Badge variant="outline" className="rounded-full border-secondary/20 px-4 py-1 font-medium text-dark/40 shadow-sm transition-transform duration-300 hover:-translate-y-0.5">From {product.origin}</Badge>}
+                                {product.productType && product.productType !== product.category && <Badge variant="outline" className="rounded-full border-secondary/20 px-4 py-1 font-medium text-dark/50 shadow-sm transition-transform duration-300 hover:-translate-y-0.5">{product.productType}</Badge>}
+                                {product.badge && <Badge variant="outline" className="rounded-full border-accent/20 bg-accent/5 px-4 py-1 font-semibold text-accent shadow-sm transition-transform duration-300 hover:-translate-y-0.5">{product.badge}</Badge>}
                             </div>
-                            <h1 className="font-display text-3xl font-bold tracking-tight text-dark md:text-4xl lg:text-5xl">{product.name}</h1>
+                            <h1 className="font-display text-3xl font-bold tracking-tight text-dark md:text-4xl md:leading-[1.06] lg:text-5xl">{product.name}</h1>
                             <div className="flex items-center gap-5 flex-wrap">
                                 <div className="flex items-end gap-3 flex-wrap">
                                     <p className="font-display text-2xl font-bold text-accent md:text-3xl">{(product.salePrice ?? product.price).toLocaleString()} ETB</p>

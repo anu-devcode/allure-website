@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { orderService } from "@/services/orderService";
 import { useCustomerAuth } from "@/store/useCustomerAuth";
 import { Order } from "@/types";
-import { ArrowRight, CheckCircle2, Clock, Package, Search, Truck, UserRoundSearch, X, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Search, Truck, UserRoundSearch, X, XCircle } from "lucide-react";
+import { usePersistentDraft } from "@/hooks/usePersistentDraft";
+import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
 
 const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string }> = {
     New: { icon: Clock, color: "text-yellow-700", bg: "bg-yellow-50" },
@@ -28,12 +30,23 @@ export default function TrackOrderPage() {
     const [autoLoaded, setAutoLoaded] = useState(false);
     const [savedRefs, setSavedRefs] = useState(orderService.getTrackedGuestOrders());
 
+    const handleRestore = useCallback((draft: { orderNumber: string; phone: string }) => {
+        setOrderNumber(draft.orderNumber ?? "");
+        setPhone(draft.phone ?? "");
+    }, []);
+
+    const { saveState, restored } = usePersistentDraft({
+        storageKey: "allure-track-order-draft-v1",
+        value: { orderNumber, phone },
+        onRestore: handleRestore,
+    });
+
     const savedRefsSorted = useMemo(
         () => [...savedRefs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
         [savedRefs]
     );
 
-    const lookupOrder = async (nextOrderNumber = orderNumber, nextPhone = phone) => {
+    const lookupOrder = useCallback(async (nextOrderNumber = orderNumber, nextPhone = phone) => {
         setLoading(true);
         setError(null);
 
@@ -50,7 +63,7 @@ export default function TrackOrderPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [orderNumber, phone]);
 
     useEffect(() => {
         if (autoLoaded || !orderNumber.trim() || !phone.trim()) {
@@ -59,7 +72,7 @@ export default function TrackOrderPage() {
 
         setAutoLoaded(true);
         void lookupOrder(orderNumber, phone);
-    }, [autoLoaded, orderNumber, phone]);
+    }, [autoLoaded, lookupOrder, orderNumber, phone]);
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -76,8 +89,8 @@ export default function TrackOrderPage() {
                                 <UserRoundSearch className="h-3.5 w-3.5" />
                                 Guest Order Tracking
                             </div>
-                            <h1 className="font-display text-3xl font-bold tracking-tight text-dark md:text-5xl">Track your order anytime</h1>
-                            <p className="mt-3 max-w-xl text-sm text-dark/60 md:text-base">
+                            <h1 className="font-display text-3xl font-bold tracking-tight text-dark md:text-5xl md:leading-[1.06]">Track your order anytime</h1>
+                            <p className="mt-3 max-w-xl text-sm leading-relaxed text-dark/60 md:text-base">
                                 Enter your order number and the phone number used at checkout. If you later sign in or create an account with the same phone number, your guest orders sync into your account automatically.
                             </p>
                         </div>
@@ -94,6 +107,7 @@ export default function TrackOrderPage() {
                 <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
                     <div className="rounded-[2rem] border border-secondary/10 bg-white p-6 md:p-8 shadow-sm">
                         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                            <AutosaveIndicator saveState={saveState} restored={restored} />
                             <div>
                                 <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-dark/40">Order Number</label>
                                 <input
@@ -138,7 +152,7 @@ export default function TrackOrderPage() {
                                         const config = statusConfig[trackedOrder.status] ?? statusConfig.New;
                                         const StatusIcon = config.icon;
                                         return (
-                                            <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] ${config.color} ${config.bg}`}>
+                                            <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] shadow-sm transition-transform duration-300 hover:-translate-y-0.5 ${config.color} ${config.bg}`}>
                                                 <StatusIcon className="h-3.5 w-3.5" />
                                                 {trackedOrder.status}
                                             </span>
@@ -181,8 +195,8 @@ export default function TrackOrderPage() {
 
                     <div className="flex flex-col gap-6">
                         <div className="rounded-[2rem] border border-secondary/10 bg-white p-6 shadow-sm">
-                            <h2 className="font-display text-xl font-bold text-dark">Saved recent guest orders</h2>
-                            <p className="mt-1 text-sm text-dark/50">Recent orders tracked from this device appear here for faster lookup.</p>
+                            <h2 className="font-display text-xl font-bold tracking-tight text-dark">Saved recent guest orders</h2>
+                            <p className="mt-1 text-sm leading-relaxed text-dark/50">Recent orders tracked from this device appear here for faster lookup.</p>
 
                             {savedRefsSorted.length === 0 ? (
                                 <div className="mt-5 rounded-2xl bg-secondary/5 p-5 text-sm text-dark/45">
@@ -225,7 +239,7 @@ export default function TrackOrderPage() {
                         </div>
 
                         <div className="rounded-[2rem] border border-primary/15 bg-primary/5 p-6 shadow-sm">
-                            <h2 className="font-display text-xl font-bold text-dark">Want these in your account?</h2>
+                            <h2 className="font-display text-xl font-bold tracking-tight text-dark">Want these in your account?</h2>
                             <p className="mt-2 text-sm leading-relaxed text-dark/60">
                                 Create an account or sign in using the same phone number you used at checkout. Matching guest orders are attached to your customer account automatically.
                             </p>
@@ -239,7 +253,7 @@ export default function TrackOrderPage() {
                         </div>
 
                         <div className="rounded-[2rem] border border-secondary/10 bg-white p-6 shadow-sm">
-                            <h2 className="font-display text-xl font-bold text-dark">After payment</h2>
+                            <h2 className="font-display text-xl font-bold tracking-tight text-dark">After payment</h2>
                             <p className="mt-2 text-sm leading-relaxed text-dark/60">
                                 After you transfer the payment, send your screenshot to the support number shown at checkout so the team can confirm and process the order faster.
                             </p>

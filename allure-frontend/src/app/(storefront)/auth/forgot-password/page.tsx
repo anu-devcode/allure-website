@@ -1,10 +1,12 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { customerAuthService } from "@/services/customerAuthService";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mail, Sparkles } from "lucide-react";
+import { usePersistentDraft } from "@/hooks/usePersistentDraft";
+import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
@@ -12,6 +14,16 @@ export default function ForgotPasswordPage() {
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
     const [resetToken, setResetToken] = useState<string | null>(null);
+
+    const handleRestore = useCallback((draft: { email: string }) => {
+        setEmail(draft.email ?? "");
+    }, []);
+
+    const { saveState, restored, clearDraft } = usePersistentDraft({
+        storageKey: "allure-forgot-password-draft-v1",
+        value: { email },
+        onRestore: handleRestore,
+    });
 
     const resetLink = useMemo(() => {
         if (!resetToken) {
@@ -32,6 +44,7 @@ export default function ForgotPasswordPage() {
             const result = await customerAuthService.forgotPassword(email);
             setMessage(result.message || "If the email exists, a reset link has been generated.");
             setResetToken(result.resetToken ?? null);
+            clearDraft();
         } catch {
             setError("Unable to process your request right now. Please try again shortly.");
         } finally {
@@ -60,6 +73,7 @@ export default function ForgotPasswordPage() {
 
             <section className="container mx-auto px-4 py-10 md:py-14">
                 <div className="mx-auto max-w-md rounded-[2.5rem] bg-white p-8 md:p-10 shadow-2xl shadow-secondary/10 border border-secondary/10 animate-slide-up-fade">
+                    <AutosaveIndicator saveState={saveState} restored={restored} className="mb-6" />
                     {error ? (
                         <div className="mb-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600">
                             {error}

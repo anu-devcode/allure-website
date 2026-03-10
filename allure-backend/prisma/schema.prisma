@@ -21,6 +21,7 @@ model User {
   wishlist  Wishlist?
   refreshTokens RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  contactMessages ContactMessage[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -174,9 +175,19 @@ model ContactMessage {
   name        String
   contact     String
   message     String
+  customer    User?                 @relation(fields: [customerId], references: [id])
+  customerId  String?
   status      ContactMessageStatus  @default(NEW)
+  followUpAt  DateTime?
+  followUpNote String?
+  lastReplyAt DateTime?
+  lastReplyChannel ReplyChannel?
+  lastReplySummary String?
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
+
+  @@index([status, createdAt])
+  @@index([customerId])
 }
 
 model Wishlist {
@@ -236,5 +247,15 @@ enum RequestStatus {
 
 enum ContactMessageStatus {
   NEW
+  IN_PROGRESS
+  FOLLOW_UP
   RESOLVED
+}
+
+enum ReplyChannel {
+  PHONE
+  WHATSAPP
+  TELEGRAM
+  EMAIL
+  OTHER
 }

@@ -7,8 +7,29 @@ export interface ContactMessage {
     name: string;
     contact: string;
     message: string;
-    status: "NEW" | "RESOLVED";
+    status: "NEW" | "IN_PROGRESS" | "FOLLOW_UP" | "RESOLVED";
+    senderType: "GUEST" | "REGISTERED";
+    customer: {
+        id: string;
+        name: string | null;
+        email: string;
+        phone: string | null;
+    } | null;
+    followUpAt: string | null;
+    followUpNote: string | null;
+    lastReplyAt: string | null;
+    lastReplyChannel: "PHONE" | "WHATSAPP" | "TELEGRAM" | "EMAIL" | "OTHER" | null;
+    lastReplySummary: string | null;
     createdAt: string;
+}
+
+export interface UpdateContactMessagePayload {
+    status?: "NEW" | "IN_PROGRESS" | "FOLLOW_UP" | "RESOLVED";
+    followUpAt?: string | null;
+    followUpNote?: string | null;
+    lastReplyAt?: string | null;
+    lastReplyChannel?: "PHONE" | "WHATSAPP" | "TELEGRAM" | "EMAIL" | "OTHER" | null;
+    lastReplySummary?: string | null;
 }
 
 export const adminContactService = {
@@ -19,13 +40,17 @@ export const adminContactService = {
         return response.data;
     },
 
-    async updateMessageStatus(token: string, id: string, status: "NEW" | "RESOLVED"): Promise<ContactMessage> {
+    async updateMessage(token: string, id: string, payload: UpdateContactMessagePayload): Promise<ContactMessage> {
         const response = await axios.patch<ContactMessage>(
             `${API_BASE_URL}/contact-messages/${id}`,
-            { status },
+            payload,
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return response.data;
+    },
+
+    async updateMessageStatus(token: string, id: string, status: "NEW" | "IN_PROGRESS" | "FOLLOW_UP" | "RESOLVED"): Promise<ContactMessage> {
+        return this.updateMessage(token, id, { status });
     },
 
     async deleteMessage(token: string, id: string): Promise<void> {
@@ -34,7 +59,9 @@ export const adminContactService = {
         });
     },
 
-    async submitMessage(payload: { name: string; contact: string; message: string }): Promise<void> {
-        await axios.post(`${API_BASE_URL}/contact-messages`, payload);
+    async submitMessage(payload: { name: string; contact: string; message: string }, token?: string | null): Promise<void> {
+        await axios.post(`${API_BASE_URL}/contact-messages`, payload, {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
     },
 };

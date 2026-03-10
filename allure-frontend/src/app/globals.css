@@ -88,6 +88,24 @@ h6 {
   animation: pulse-slow 3s ease-in-out infinite;
 }
 
+@keyframes cart-badge-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.22);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-cart-badge-pop {
+  animation: cart-badge-pop 0.28s ease-out;
+}
+
 @keyframes shake {
 
   0%,

@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { customerAuthService } from "@/services/customerAuthService";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, KeyRound, Lock, Sparkles } from "lucide-react";
+import { usePersistentDraft } from "@/hooks/usePersistentDraft";
+import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
 
 export default function ResetPasswordPage() {
     const router = useRouter();
@@ -17,6 +19,18 @@ export default function ResetPasswordPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
+
+    const handleRestore = useCallback((draft: { token: string; newPassword: string; confirmPassword: string }) => {
+        setToken(draft.token ?? "");
+        setNewPassword(draft.newPassword ?? "");
+        setConfirmPassword(draft.confirmPassword ?? "");
+    }, []);
+
+    const { saveState, restored, clearDraft } = usePersistentDraft({
+        storageKey: "allure-reset-password-draft-v1",
+        value: { token, newPassword, confirmPassword },
+        onRestore: handleRestore,
+    });
 
     useEffect(() => {
         const tokenParam = searchParams.get("token");
@@ -50,6 +64,7 @@ export default function ResetPasswordPage() {
         try {
             const result = await customerAuthService.resetPassword(token.trim(), newPassword);
             setMessage(result.message || "Password reset successful.");
+            clearDraft();
             setTimeout(() => {
                 router.push("/auth");
             }, 900);
@@ -81,6 +96,7 @@ export default function ResetPasswordPage() {
 
             <section className="container mx-auto px-4 py-10 md:py-14">
                 <div className="mx-auto max-w-md rounded-[2.5rem] bg-white p-8 md:p-10 shadow-2xl shadow-secondary/10 border border-secondary/10 animate-slide-up-fade">
+                    <AutosaveIndicator saveState={saveState} restored={restored} className="mb-6" />
                     {error ? (
                         <div className="mb-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600">
                             {error}

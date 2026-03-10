@@ -70,12 +70,12 @@ function CatalogContent() {
             {/* Header Info */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="font-display text-4xl font-bold text-dark">Our Catalog</h1>
-                    <p className="mt-1 text-dark/60">Showing {filteredProducts.length} results</p>
+                    <h1 className="font-display text-4xl font-bold tracking-tight text-dark md:text-[2.75rem]">Our Catalog</h1>
+                    <p className="mt-1 text-dark/60 leading-relaxed">Showing {filteredProducts.length} results</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    {category && <Badge variant="secondary" className="px-3 py-1">{category}</Badge>}
-                    {availability && <Badge variant="outline" className="px-3 py-1">{availability}</Badge>}
+                    {category && <Badge variant="secondary" className="rounded-full border-none px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] shadow-sm transition-transform duration-300 hover:-translate-y-0.5">{category}</Badge>}
+                    {availability && <Badge variant="outline" className="rounded-full border-secondary/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] shadow-sm transition-transform duration-300 hover:-translate-y-0.5">{availability}</Badge>}
                 </div>
             </div>
 
@@ -112,8 +112,8 @@ function CatalogContent() {
                     ) : (
                         <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border-2 border-dashed border-secondary/20 p-12 text-center">
                             <div className="text-4xl mb-4">🔍</div>
-                            <h3 className="font-display text-xl font-bold text-dark">No products found</h3>
-                            <p className="text-dark/60">Try adjusting your filters or search terms.</p>
+                            <h3 className="font-display text-xl font-bold tracking-tight text-dark">No products found</h3>
+                            <p className="text-dark/60 leading-relaxed">Try adjusting your filters or search terms.</p>
                         </div>
                     )}
 

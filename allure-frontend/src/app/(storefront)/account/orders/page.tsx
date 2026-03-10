@@ -102,8 +102,8 @@ export default function OrdersPage() {
     return (
         <div className="animate-slide-up-fade">
             <div className="mb-8">
-                <h1 className="font-display text-2xl font-bold text-dark tracking-tight md:text-3xl">My Orders</h1>
-                <p className="text-sm text-dark/50 mt-1">Track and manage your orders.</p>
+                <h1 className="font-display text-2xl font-bold tracking-tight text-dark md:text-3xl">My Orders</h1>
+                <p className="mt-1 text-sm leading-relaxed text-dark/50">Track and manage your orders.</p>
             </div>
 
             {feedback && (
@@ -141,7 +141,7 @@ export default function OrdersPage() {
                                         <div>
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <p className="text-sm font-bold text-dark">{order.orderNumber}</p>
-                                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.color} ${config.bg}`}>
+                                                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-sm transition-transform duration-300 hover:-translate-y-0.5 ${config.color} ${config.bg}`}>
                                                     <StatusIcon className="h-3 w-3" />
                                                     {order.status}
                                                 </span>

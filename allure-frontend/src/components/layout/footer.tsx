@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Facebook, Instagram, Twitter } from "lucide-react";
+import { useStorefrontCms } from "@/components/providers/storefront-cms-provider";
 
 export function Footer() {
+    const { content } = useStorefrontCms();
+    const footer = content.footer;
+
     return (
         <footer className="w-full border-t border-secondary/20 bg-white">
             <div className="container mx-auto px-4 py-12">
@@ -10,16 +16,16 @@ export function Footer() {
                     <div className="flex flex-col gap-4">
                         <h3 className="font-display text-xl font-bold text-accent">Allure</h3>
                         <p className="text-sm text-dark/60">
-                            Your premium destination for social-media active shoppers. Clean, friendly, and fast.
+                            {footer.brandDescription}
                         </p>
                         <div className="flex gap-4">
-                            <Link href="#" className="text-dark/40 hover:text-accent">
+                            <Link href={footer.instagramUrl || "#"} className="text-dark/40 hover:text-accent">
                                 <Instagram className="h-5 w-5" />
                             </Link>
-                            <Link href="#" className="text-dark/40 hover:text-accent">
+                            <Link href={footer.facebookUrl || "#"} className="text-dark/40 hover:text-accent">
                                 <Facebook className="h-5 w-5" />
                             </Link>
-                            <Link href="#" className="text-dark/40 hover:text-accent">
+                            <Link href={footer.twitterUrl || "#"} className="text-dark/40 hover:text-accent">
                                 <Twitter className="h-5 w-5" />
                             </Link>
                         </div>
@@ -58,9 +64,9 @@ export function Footer() {
                             Find Us
                         </h4>
                         <address className="not-italic text-sm text-dark/60">
-                            <p>Addis Ababa, Ethiopia</p>
-                            <p className="mt-2">Phone: +251 9XX XXX XXX</p>
-                            <p className="mt-1">Email: hello@allure.com</p>
+                            <p>{footer.addressLineOne}</p>
+                            <p className="mt-2">Phone: {footer.phone}</p>
+                            <p className="mt-1">Email: {footer.email}</p>
                         </address>
                     </div>
                 </div>
